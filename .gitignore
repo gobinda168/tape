@@ -3,3 +3,4 @@ server/target/
 server/data/
 .impeccable/review/
 .impeccable/build/
+.chrome-profile/
