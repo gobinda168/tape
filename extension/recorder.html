@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tape: recorder</title>
+<link rel="icon" href="icons/32.png">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/recorder.css">
+<script src="lib/icons.js"></script>
+<script type="module" src="recorder.js"></script>
+</head>
+<body>
+<main class="body">
+  <header class="rec-top"><span class="mark"><span class="lens" aria-hidden="true"></span>Tape<span class="stripe mini" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span></header>
+  <section class="panel" id="pick">
+    <h1>Choose what to record</h1>
+    <p>Pick a window or your whole screen in Chrome's dialog. Tape takes you back to your page and counts down from 3.</p>
+    <div class="row">
+      <button class="primary" id="choose" type="button"></button>
+      <button class="ghost" id="cancel" type="button">Cancel</button>
+    </div>
+    <p class="error" id="error" role="alert" hidden></p>
+  </section>
+  <section class="panel" id="live" hidden>
+    <p class="state"><span class="dot" aria-hidden="true"></span><span id="label">Recording</span></p>
+    <p class="timer tnum" id="timer">0:00</p>
+    <p>Keep this tab open while you record. Closing it ends the recording without saving.</p>
+    <div class="row">
+      <button class="stop" id="stop" type="button"></button>
+      <button class="ghost" id="pause" type="button"></button>
+    </div>
+  </section>
+</main>
+</body>
+</html>

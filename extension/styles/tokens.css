@@ -1,0 +1,105 @@
+/* Tape tokens. Instant-camera body for chrome, cool white prints on a grey tabletop for the library. */
+@font-face {
+  font-family: "Geist";
+  src: url("../fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("../fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  /* Spectrum: state only. */
+  --red: #e5402f;
+  --red-press: #c9321f;
+  --orange: #f08a24;
+  --yellow: #f2c230;
+  --green: #3fa15a;
+  --blue: #2f78c4;
+
+  /* Camera body (popup, recording bar). Always dark: it is a physical object. */
+  --body: #1d1e20;
+  --body-raised: #27292c;
+  --body-line: #34363a;
+  --body-ink: #f1f1ef;
+  --body-ink-2: #a9abaf;
+  --body-ink-3: #8e9196;
+
+  /* Tabletop + prints (library). */
+  --table: #e4e5e7;
+  --table-2: #d8d9dc;
+  --print: #fbfbfa;
+  --print-edge: #d2d3d6;
+  --ink: #17181a;
+  --ink-2: #4c4f54;
+  --ink-3: #6e7177;
+  --line: #d9dadd;
+  --field: #ffffff;
+  /* Text that sits on the tabletop (prints keep --ink, they are always paper). */
+  --tink: #17181a;
+  --tink-2: #464a50;
+  --tink-3: #62666c;
+  --shadow-print: 0 1px 1px rgb(23 24 26 / 0.06), 0 6px 18px -6px rgb(23 24 26 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(23 24 26 / 0.08), 0 18px 40px -12px rgb(23 24 26 / 0.28);
+  --focus: 0 0 0 2px var(--table), 0 0 0 4px var(--blue);
+
+  --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --r-control: 6px;
+  --r-print: 3px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 160ms;
+  --t-med: 240ms;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --table: #141516;
+    --table-2: #1c1d1f;
+    --print: #f4f4f2;
+    --print-edge: #2b2d30;
+    --ink: #17181a;
+    --ink-2: #4c4f54;
+    --ink-3: #6e7177;
+    --line: #2c2e31;
+    --field: #1f2023;
+    --tink: #ededeb;
+    --tink-2: #b4b6ba;
+    --tink-3: #8d9095;
+    --shadow-print: 0 1px 1px rgb(0 0 0 / 0.4), 0 10px 26px -8px rgb(0 0 0 / 0.7);
+    --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.5), 0 24px 50px -14px rgb(0 0 0 / 0.8);
+    color-scheme: dark;
+  }
+}
+
+/* The five-band stripe: the mark of the camera body. */
+.stripe {
+  display: inline-flex;
+  height: 4px;
+  width: 30px;
+  border-radius: 2px;
+  overflow: hidden;
+  vertical-align: middle;
+}
+.stripe > i { flex: 1; }
+.stripe > i:nth-child(1) { background: var(--red); }
+.stripe > i:nth-child(2) { background: var(--orange); }
+.stripe > i:nth-child(3) { background: var(--yellow); }
+.stripe > i:nth-child(4) { background: var(--green); }
+.stripe > i:nth-child(5) { background: var(--blue); }
+
+.icon { display: inline-flex; width: 1em; height: 1em; flex: none; }
+.icon svg { width: 100%; height: 100%; display: block; }
+
+.tnum { font-variant-numeric: tabular-nums; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}

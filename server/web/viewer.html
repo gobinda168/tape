@@ -1,0 +1,253 @@
+<!doctype html>
+<!--
+  Tape share page. tape-server substitutes the double-brace placeholders with
+  HTML-escaped values. Values only go into text and attributes, never into
+  <script>; the script reads them back from the data-* attributes on #tape.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<meta name="description" content="A recording shared with Tape.">
+<meta property="og:type" content="video.other">
+<meta property="og:title" content="{{TITLE}}">
+<meta property="og:url" content="{{PAGE_URL}}">
+<meta property="og:image" content="{{THUMB_URL}}">
+<meta property="og:video" content="{{MEDIA_URL}}">
+<meta property="og:video:type" content="{{MIME}}">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon.png">
+<link rel="stylesheet" href="/assets/player.css">
+<script src="/assets/player.js"></script>
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face { font-family: "Geist"; src: url("/assets/fonts/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+  @font-face { font-family: "Geist Mono"; src: url("/assets/fonts/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+  :root {
+    --red: #e5402f; --orange: #f08a24; --yellow: #f2c230; --green: #3fa15a; --blue: #2f78c4;
+    --body: #1d1e20; --body-raised: #27292c; --body-line: #34363a; --body-ink: #f1f1ef; --body-ink-2: #a9abaf;
+    --table: #e4e5e7; --table-2: #d8d9dc; --print: #fbfbfa; --ink: #17181a; --ink-2: #4c4f54; --ink-3: #6e7177;
+    --tink: #17181a; --tink-2: #464a50; --tink-3: #62666c; --line: #d9dadd; --field: #fff;
+    --shadow-print: 0 1px 1px rgb(23 24 26 / 0.06), 0 6px 18px -6px rgb(23 24 26 / 0.18);
+    --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --table: #141516; --table-2: #1c1d1f; --print: #f4f4f2; --tink: #ededeb; --tink-2: #b4b6ba; --tink-3: #8d9095;
+      --line: #2e3033; --field: #1f2023;
+      --shadow-print: 0 1px 1px rgb(0 0 0 / 0.4), 0 10px 26px -8px rgb(0 0 0 / 0.7);
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--table); }
+  body { margin: 0; min-height: 100dvh; background: var(--table); color: var(--tink); font: 15px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+  ::selection { background: color-mix(in srgb, var(--blue) 30%, transparent); }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+  [hidden] { display: none !important; }
+
+  .stripe { display: inline-flex; width: 30px; height: 4px; border-radius: 2px; overflow: hidden; margin-left: 3px; }
+  .stripe i { flex: 1; }
+  .stripe i:nth-child(1) { background: var(--red); } .stripe i:nth-child(2) { background: var(--orange); }
+  .stripe i:nth-child(3) { background: var(--yellow); } .stripe i:nth-child(4) { background: var(--green); }
+  .stripe i:nth-child(5) { background: var(--blue); }
+  .top { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--body); color: var(--body-ink); box-shadow: 0 1px 0 var(--body-line); }
+  .mark { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; font-size: 16px; letter-spacing: -0.01em; }
+  .lens { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle, var(--red) 0 3.5px, var(--body) 4px 5.5px, var(--body-ink-2) 6px); }
+
+  .btn { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border: 0; border-radius: 6px; cursor: pointer; font: 500 14px/1 var(--font); white-space: nowrap; transition: background 160ms var(--ease), transform 160ms var(--ease); }
+  .btn:active { transform: translateY(1px); }
+  .btn svg { width: 17px; height: 17px; }
+  .btn.on-body { background: transparent; color: var(--body-ink); box-shadow: inset 0 0 0 1px var(--body-line); }
+  .btn.on-body:hover { background: var(--body-raised); }
+  .btn.primary { background: var(--tink); color: var(--table); }
+  .btn.primary:hover { background: color-mix(in srgb, var(--tink) 86%, var(--table)); }
+  .btn:disabled { opacity: 0.55; cursor: default; }
+
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 32px 72px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); gap: 40px; align-items: start; }
+  .print { background: var(--print); color: var(--ink); border-radius: 3px; box-shadow: var(--shadow-print); padding: 16px 16px 0; }
+  .photo { position: relative; aspect-ratio: 16 / 9; background: #0f1011; overflow: hidden; }
+  .photo iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: contain; background: #0f1011; }
+  .margin { padding: 18px 4px 26px; }
+  h1 { margin: 0; font-size: 24px; line-height: 1.25; letter-spacing: -0.02em; font-weight: 600; text-wrap: balance; }
+  .meta { margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--ink-3); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+  .comments h2 { font-size: 14px; font-weight: 600; margin: 4px 0 14px; display: flex; gap: 8px; align-items: baseline; }
+  .count { font: 500 12px var(--mono); color: var(--tink-3); }
+  .list { list-style: none; margin: 0 0 20px; padding: 0; display: grid; }
+  .list li { padding: 12px 0; border-top: 1px solid var(--line); }
+  .who { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+  .who strong { font-weight: 600; }
+  .who time { color: var(--tink-3); }
+  .at { border: 0; padding: 1px 6px; border-radius: 4px; cursor: pointer; background: var(--blue); color: #fff; font: 500 11.5px/1.5 var(--mono); }
+  .at:hover { background: color-mix(in srgb, var(--blue) 85%, #000); }
+  .list p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--tink); }
+  .none { color: var(--tink-3); font-size: 14px; padding: 12px 0; border-top: 1px solid var(--line); margin: 0 0 20px; }
+
+  form { display: grid; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .field { display: grid; gap: 6px; }
+  label { font-size: 13px; font-weight: 600; }
+  input[type="text"], textarea { width: 100%; padding: 9px 12px; border: 0; border-radius: 6px; background: var(--field); color: var(--tink); font: 14px/1.45 var(--font); box-shadow: inset 0 0 0 1px var(--line); resize: vertical; }
+  input:focus, textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--blue); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .check { display: inline-flex; align-items: center; gap: 7px; font-weight: 400; color: var(--tink-2); font-size: 13px; cursor: pointer; }
+  .check input { accent-color: var(--tink); width: 16px; height: 16px; margin: 0; }
+  .error { margin: 0; color: var(--red); font-size: 13px; }
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); padding: 11px 16px; border-radius: 999px; background: var(--body); color: var(--body-ink); font-size: 14px; font-weight: 500; box-shadow: 0 14px 34px -10px rgb(0 0 0 / 0.45); }
+  .foot { grid-column: 1 / -1; color: var(--tink-3); font-size: 13px; margin: 0; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); padding: 16px 16px 64px; gap: 28px; }
+    .top { padding: 0 16px; }
+    .print { padding: 10px 10px 0; }
+    h1 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="mark"><span class="lens" aria-hidden="true"></span>Tape<span class="stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span>
+  <button class="btn on-body" id="copy" type="button">
+    <!-- Phosphor "copy" (MIT) -->
+    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"/></svg>
+    Copy link
+  </button>
+</header>
+
+<main class="page" id="tape"
+      data-slug="{{SLUG}}" data-page-url="{{PAGE_URL}}" data-media-url="{{MEDIA_URL}}" data-thumb-url="{{THUMB_URL}}"
+      data-created="{{CREATED_ISO}}" data-duration-ms="{{DURATION_MS}}" data-storage="{{STORAGE}}" data-drive-file-id="{{DRIVE_FILE_ID}}"
+      data-embed-mode="{{EMBED_MODE}}" data-mime="{{MIME}}">
+  <article class="print">
+    <div class="photo" id="player"></div>
+    <div class="margin">
+      <h1>{{TITLE}}</h1>
+      <p class="meta">
+        <time datetime="{{CREATED_ISO}}" id="created"></time>
+        <span id="duration"></span>
+        <span id="views"></span>
+      </p>
+    </div>
+  </article>
+
+  <section class="comments" aria-labelledby="ch">
+    <h2 id="ch">Comments <span class="count" id="count"></span></h2>
+    <ul class="list" id="list"></ul>
+    <p class="none" id="none" hidden>No comments yet. Pause on a moment and leave the first one.</p>
+    <form id="form">
+      <div class="field">
+        <label for="name">Your name</label>
+        <input type="text" id="name" name="name" maxlength="60" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="body">Comment</label>
+        <textarea id="body" name="body" rows="3" maxlength="2000" required></textarea>
+      </div>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="atTime" checked><span id="atLabel">At 0:00</span></label>
+        <button class="btn primary" type="submit" id="post">Post comment</button>
+      </div>
+      <p class="error" id="err" role="alert" hidden></p>
+    </form>
+  </section>
+  <p class="foot">Recorded with Tape. Hosted on a server run by the person who shared it.</p>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+  const d = document.getElementById("tape").dataset;
+  const api = "/api/public/videos/" + encodeURIComponent(d.slug);
+  const $ = (id) => document.getElementById(id);
+  let video = null;
+
+  const clock = (ms) => {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(s % 60).padStart(2, "0");
+    return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+  };
+  const when = (iso) => {
+    const t = new Date(iso);
+    return isNaN(t) ? "" : t.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+  };
+  const ago = (iso) => {
+    const s = (Date.now() - new Date(iso)) / 1000;
+    if (s < 60) return "just now";
+    if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+    return when(iso);
+  };
+  let toastT;
+  const toast = (t) => { const el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (el.hidden = true), 2400); };
+
+  $("created").textContent = when(d.created);
+  if (+d.durationMs) $("duration").textContent = clock(+d.durationMs);
+
+  if (d.embedMode === "video" && d.mediaUrl) {
+    video = TapePlayer.mount($("player"), { src: d.mediaUrl, type: d.mime, poster: d.thumbUrl, durationMs: +d.durationMs });
+    video.addEventListener("timeupdate", () => ($("atLabel").textContent = "At " + clock(video.currentTime * 1000)));
+  } else if (d.driveFileId) {
+    const f = document.createElement("iframe");
+    f.src = "https://drive.google.com/file/d/" + encodeURIComponent(d.driveFileId) + "/preview";
+    f.allow = "autoplay; fullscreen"; f.title = document.title;
+    $("player").appendChild(f);
+    $("atTime").closest("label").hidden = true;
+    $("atTime").checked = false;
+  }
+
+  fetch(api + "/view", { method: "POST" }).then((r) => r.json()).then((j) => {
+    $("views").textContent = j.views === 1 ? "1 view" : `${j.views} views`;
+  }).catch(() => {});
+
+  function render(list) {
+    const ul = $("list");
+    ul.replaceChildren();
+    $("count").textContent = list.length || "";
+    $("none").hidden = list.length > 0;
+    for (const c of list) {
+      const li = document.createElement("li");
+      const who = document.createElement("div"); who.className = "who";
+      const n = document.createElement("strong"); n.textContent = c.name; who.append(n);
+      if (c.at_ms != null) {
+        const b = document.createElement("button"); b.type = "button"; b.className = "at"; b.textContent = clock(c.at_ms);
+        b.setAttribute("aria-label", "Jump to " + clock(c.at_ms));
+        b.onclick = () => { if (video) { video.currentTime = c.at_ms / 1000; video.play().catch(() => {}); } };
+        who.append(b);
+      }
+      const t = document.createElement("time"); t.dateTime = c.created_at; t.textContent = ago(c.created_at); who.append(t);
+      const p = document.createElement("p"); p.textContent = c.body;
+      li.append(who, p);
+      ul.append(li);
+    }
+  }
+  const load = () => fetch(api + "/comments").then((r) => r.json()).then(render).catch(() => render([]));
+  load();
+
+  try { $("name").value = localStorage.getItem("tape-name") || ""; } catch {}
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("err").hidden = true;
+    const body = $("body").value.trim();
+    if (!body) { $("err").textContent = "Write a comment first."; $("err").hidden = false; return; }
+    const payload = { name: $("name").value.trim(), body };
+    if ($("atTime").checked && video) payload.at_ms = Math.round(video.currentTime * 1000);
+    $("post").disabled = true;
+    try {
+      const r = await fetch(api + "/comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || "Could not post the comment.");
+      try { localStorage.setItem("tape-name", payload.name); } catch {}
+      $("body").value = "";
+      await load();
+    } catch (err) {
+      $("err").textContent = err.message; $("err").hidden = false;
+    } finally { $("post").disabled = false; }
+  });
+
+  $("copy").onclick = () => navigator.clipboard.writeText(d.pageUrl || location.href).then(() => toast("Link copied"), () => toast("Copy the address from the address bar"));
+</script>
+</body>
+</html>

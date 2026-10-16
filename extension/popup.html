@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tape</title>
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/popup.css">
+<script src="lib/icons.js"></script>
+<script type="module" src="popup.js"></script>
+</head>
+<body>
+<header>
+  <span class="mark"><span class="lens" aria-hidden="true"></span>Tape<span class="stripe mini" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span>
+  <nav>
+    <button type="button" class="iconbtn" id="library" aria-label="Open library" title="Library"></button>
+    <button type="button" class="iconbtn" id="settings" aria-label="Settings" title="Settings"></button>
+  </nav>
+</header>
+
+<main id="setup" hidden>
+  <h1>Allow camera and microphone</h1>
+  <p>Chrome asks once. Tape uses them only while you record, and the video stays on your computer.</p>
+  <button type="button" class="start" id="allow"></button>
+  <button type="button" class="link" id="skip">Record screen without them</button>
+</main>
+
+<main id="idle" hidden>
+  <div class="seg" role="radiogroup" aria-label="What to record" id="mode">
+    <button type="button" role="radio" data-v="screen-cam"></button>
+    <button type="button" role="radio" data-v="screen"></button>
+    <button type="button" role="radio" data-v="cam"></button>
+  </div>
+
+  <div class="seg small" role="radiogroup" aria-label="Screen source" id="source">
+    <button type="button" role="radio" data-v="tab"></button>
+    <button type="button" role="radio" data-v="desktop"></button>
+  </div>
+
+  <div class="device" id="camRow">
+    <div class="preview"><video id="preview" autoplay muted playsinline></video></div>
+    <label class="field">
+      <span>Camera</span>
+      <select id="camera"></select>
+    </label>
+  </div>
+
+  <div class="device" id="micRow">
+    <button type="button" class="micbtn" id="micToggle" aria-pressed="true"></button>
+    <label class="field">
+      <span>Microphone</span>
+      <select id="mic"></select>
+    </label>
+  </div>
+
+  <button type="button" class="start" id="start"></button>
+  <p class="hint"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>R</kbd> starts and stops from any page</p>
+  <p class="error" id="error" role="alert" hidden></p>
+</main>
+
+<main id="live" hidden>
+  <p class="state"><span class="dot" aria-hidden="true"></span><span id="liveLabel">Recording</span></p>
+  <p class="timer tnum" id="timer">0:00</p>
+  <div class="liverow">
+    <button type="button" class="start stopbtn" id="stop"></button>
+    <button type="button" class="iconbtn big" id="pause" aria-label="Pause"></button>
+    <button type="button" class="iconbtn big" id="restart" aria-label="Restart"></button>
+    <button type="button" class="iconbtn big" id="cancel" aria-label="Cancel and delete"></button>
+  </div>
+</main>
+</body>
+</html>

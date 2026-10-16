@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Tape: screen recorder that saves to your computer",
+  "short_name": "Tape",
+  "version": "0.1.0",
+  "description": "Record your tab, a window or your screen with your camera and mic. Recordings save to your computer, never to someone else's servers.",
+  "minimum_chrome_version": "116",
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Tape",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png" }
+  },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "permissions": ["offscreen", "tabCapture", "storage", "unlimitedStorage", "downloads", "scripting", "tabs", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    { "matches": ["http://*/*", "https://*/*", "file://*/*"], "js": ["lib/icons.js", "content.js"], "run_at": "document_idle" }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["camera.html", "camera.js", "styles/content.css", "fonts/*"], "matches": ["<all_urls>"] }
+  ],
+  "commands": {
+    "toggle-recording": { "suggested_key": { "default": "Alt+Shift+R" }, "description": "Start or stop a recording" },
+    "toggle-pause": { "suggested_key": { "default": "Alt+Shift+P" }, "description": "Pause or resume the recording" }
+  }
+}

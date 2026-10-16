@@ -1,0 +1,717 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-16T16:29:03+00:00",
+  "title": "Design System: Tape",
+  "extensions": {
+    "colorMeta": {
+      "spectrum-red": {
+        "role": "primary",
+        "displayName": "Record Red",
+        "canonical": "#e5402f",
+        "tonalRamp": [
+          "#400000",
+          "#680000",
+          "#910000",
+          "#b90000",
+          "#e33d2d",
+          "#ff6652",
+          "#ff8d75",
+          "#ffb39a"
+        ]
+      },
+      "spectrum-red-press": {
+        "role": "primary",
+        "displayName": "Red Press",
+        "canonical": "#c9321f",
+        "tonalRamp": [
+          "#3d0000",
+          "#650000",
+          "#8c0000",
+          "#b41803",
+          "#dd4632",
+          "#ff6d56",
+          "#ff937a",
+          "#ffb99e"
+        ]
+      },
+      "spectrum-orange": {
+        "role": "secondary",
+        "displayName": "Disk Orange",
+        "canonical": "#f08a24",
+        "tonalRamp": [
+          "#320000",
+          "#560000",
+          "#7b1b00",
+          "#a04100",
+          "#c66400",
+          "#ed8820",
+          "#ffac50",
+          "#ffd278"
+        ]
+      },
+      "spectrum-yellow": {
+        "role": "secondary",
+        "displayName": "Paused Yellow",
+        "canonical": "#f2c230",
+        "tonalRamp": [
+          "#230000",
+          "#431700",
+          "#633700",
+          "#855800",
+          "#a87a00",
+          "#cd9e00",
+          "#f3c331",
+          "#ffe861"
+        ]
+      },
+      "spectrum-green": {
+        "role": "secondary",
+        "displayName": "Done Green",
+        "canonical": "#3fa15a",
+        "tonalRamp": [
+          "#001600",
+          "#003400",
+          "#00540e",
+          "#007631",
+          "#369952",
+          "#5dbd74",
+          "#82e297",
+          "#a8ffbc"
+        ]
+      },
+      "spectrum-blue": {
+        "role": "secondary",
+        "displayName": "Link Blue",
+        "canonical": "#2f78c4",
+        "tonalRamp": [
+          "#000042",
+          "#001f64",
+          "#004088",
+          "#1462ac",
+          "#3d85d2",
+          "#61a9f9",
+          "#84ceff",
+          "#a9f4ff"
+        ]
+      },
+      "camera-body": {
+        "role": "neutral",
+        "displayName": "Camera Body",
+        "canonical": "#1d1e20",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#242527",
+          "#414244",
+          "#606164",
+          "#818285",
+          "#a4a5a8",
+          "#c8c9cc",
+          "#edeef1"
+        ]
+      },
+      "camera-body-raised": {
+        "role": "neutral",
+        "displayName": "Raised Plastic",
+        "canonical": "#27292c",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#232528",
+          "#404245",
+          "#5f6165",
+          "#808286",
+          "#a3a5a9",
+          "#c7c9cd",
+          "#eceff3"
+        ]
+      },
+      "camera-body-line": {
+        "role": "neutral",
+        "displayName": "Body Seam",
+        "canonical": "#34363a",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#232529",
+          "#404246",
+          "#5f6166",
+          "#808287",
+          "#a3a5aa",
+          "#c7c9ce",
+          "#eceef4"
+        ]
+      },
+      "camera-body-ink": {
+        "role": "neutral",
+        "displayName": "Body Ink",
+        "canonical": "#f1f1ef",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#252524",
+          "#424240",
+          "#616160",
+          "#828281",
+          "#a5a5a3",
+          "#c9c9c7",
+          "#eeeeec"
+        ]
+      },
+      "camera-body-ink-2": {
+        "role": "neutral",
+        "displayName": "Body Ink Secondary",
+        "canonical": "#a9abaf",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#242528",
+          "#404245",
+          "#5f6165",
+          "#808286",
+          "#a3a5a9",
+          "#c7c9cd",
+          "#eceef3"
+        ]
+      },
+      "camera-body-ink-3": {
+        "role": "neutral",
+        "displayName": "Body Ink Tertiary",
+        "canonical": "#8e9196",
+        "tonalRamp": [
+          "#090b0f",
+          "#232529",
+          "#3f4246",
+          "#5f6166",
+          "#7f8287",
+          "#a2a5aa",
+          "#c6c9cf",
+          "#ebeff4"
+        ]
+      },
+      "lens-black": {
+        "role": "neutral",
+        "displayName": "Lens Black",
+        "canonical": "#0f1011",
+        "tonalRamp": [
+          "#0a0b0c",
+          "#242526",
+          "#414243",
+          "#606163",
+          "#818284",
+          "#a4a5a7",
+          "#c8c9cb",
+          "#edeff0"
+        ]
+      },
+      "tabletop": {
+        "role": "neutral",
+        "displayName": "Tabletop",
+        "canonical": "#e4e5e7",
+        "tonalRamp": [
+          "#0a0b0c",
+          "#242526",
+          "#414244",
+          "#606163",
+          "#818284",
+          "#a4a5a7",
+          "#c8c9cb",
+          "#edeef0"
+        ]
+      },
+      "tabletop-2": {
+        "role": "neutral",
+        "displayName": "Tabletop Well",
+        "canonical": "#d8d9dc",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#242527",
+          "#414244",
+          "#606164",
+          "#818285",
+          "#a4a5a8",
+          "#c8c9cc",
+          "#edeef1"
+        ]
+      },
+      "tabletop-dark": {
+        "role": "neutral",
+        "displayName": "Night Tabletop",
+        "canonical": "#141516",
+        "tonalRamp": [
+          "#0a0b0c",
+          "#242526",
+          "#414243",
+          "#606163",
+          "#818284",
+          "#a4a5a6",
+          "#c8c9cb",
+          "#edeff0"
+        ]
+      },
+      "tabletop-2-dark": {
+        "role": "neutral",
+        "displayName": "Night Tabletop Well",
+        "canonical": "#1c1d1f",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#242527",
+          "#414244",
+          "#606164",
+          "#818285",
+          "#a4a5a8",
+          "#c8c9cc",
+          "#edeef1"
+        ]
+      },
+      "print-white": {
+        "role": "neutral",
+        "displayName": "Print White",
+        "canonical": "#fbfbfa",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252524",
+          "#424241",
+          "#616160",
+          "#828281",
+          "#a5a5a4",
+          "#c9c9c8",
+          "#eeeeed"
+        ]
+      },
+      "print-white-dark": {
+        "role": "neutral",
+        "displayName": "Print White (night)",
+        "canonical": "#f4f4f2",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#252524",
+          "#424240",
+          "#616160",
+          "#828281",
+          "#a5a5a3",
+          "#c9c9c7",
+          "#eeeeec"
+        ]
+      },
+      "print-ink": {
+        "role": "neutral",
+        "displayName": "Print Ink",
+        "canonical": "#17181a",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#242527",
+          "#414244",
+          "#606164",
+          "#818285",
+          "#a4a5a8",
+          "#c8c9cc",
+          "#edeef1"
+        ]
+      },
+      "print-ink-2": {
+        "role": "neutral",
+        "displayName": "Print Ink Secondary",
+        "canonical": "#4c4f54",
+        "tonalRamp": [
+          "#090b0f",
+          "#23252a",
+          "#3f4247",
+          "#5e6167",
+          "#7f8288",
+          "#a2a5ab",
+          "#c6c9cf",
+          "#ebeff5"
+        ]
+      },
+      "print-ink-3": {
+        "role": "neutral",
+        "displayName": "Print Ink Tertiary",
+        "canonical": "#6e7177",
+        "tonalRamp": [
+          "#090b0f",
+          "#23252a",
+          "#3f4247",
+          "#5e6167",
+          "#7f8288",
+          "#a2a5ab",
+          "#c6c9d0",
+          "#ebeff5"
+        ]
+      },
+      "table-ink": {
+        "role": "neutral",
+        "displayName": "Table Ink",
+        "canonical": "#17181a",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#242527",
+          "#414244",
+          "#606164",
+          "#818285",
+          "#a4a5a8",
+          "#c8c9cc",
+          "#edeef1"
+        ]
+      },
+      "table-ink-2": {
+        "role": "neutral",
+        "displayName": "Table Ink Secondary",
+        "canonical": "#464a50",
+        "tonalRamp": [
+          "#080b10",
+          "#22252b",
+          "#3e4248",
+          "#5d6268",
+          "#7e8389",
+          "#a1a5ac",
+          "#c5c9d1",
+          "#eaeff6"
+        ]
+      },
+      "table-ink-3": {
+        "role": "neutral",
+        "displayName": "Table Ink Tertiary",
+        "canonical": "#62666c",
+        "tonalRamp": [
+          "#080b10",
+          "#22252a",
+          "#3f4248",
+          "#5e6167",
+          "#7e8389",
+          "#a1a5ac",
+          "#c5c9d0",
+          "#eaeff6"
+        ]
+      },
+      "table-ink-dark": {
+        "role": "neutral",
+        "displayName": "Night Table Ink",
+        "canonical": "#ededeb",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#252524",
+          "#424240",
+          "#616160",
+          "#828281",
+          "#a5a5a3",
+          "#c9c9c7",
+          "#eeeeec"
+        ]
+      },
+      "table-ink-2-dark": {
+        "role": "neutral",
+        "displayName": "Night Table Ink Secondary",
+        "canonical": "#b4b6ba",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#242528",
+          "#404245",
+          "#5f6165",
+          "#808286",
+          "#a3a5a9",
+          "#c7c9cd",
+          "#eceef3"
+        ]
+      },
+      "table-ink-3-dark": {
+        "role": "neutral",
+        "displayName": "Night Table Ink Tertiary",
+        "canonical": "#8d9095",
+        "tonalRamp": [
+          "#090b0f",
+          "#232529",
+          "#3f4246",
+          "#5f6166",
+          "#7f8287",
+          "#a2a5aa",
+          "#c6c9cf",
+          "#ebeff4"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#d9dadd",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#242527",
+          "#414244",
+          "#606164",
+          "#818285",
+          "#a4a5a8",
+          "#c8c9cc",
+          "#edeef1"
+        ]
+      },
+      "hairline-dark": {
+        "role": "neutral",
+        "displayName": "Night Hairline",
+        "canonical": "#2c2e31",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#232528",
+          "#404245",
+          "#5f6165",
+          "#808286",
+          "#a3a5a9",
+          "#c7c9cd",
+          "#eceff3"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "field-dark": {
+        "role": "neutral",
+        "displayName": "Night Field",
+        "canonical": "#1f2023",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#242528",
+          "#414245",
+          "#606165",
+          "#818286",
+          "#a3a5a9",
+          "#c8c9cd",
+          "#edeef2"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Settings and setup page titles; countdown numeral at 84px."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Print title in the bottom margin, editable in place."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Row names, section heads, small print titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text on pages (14px in the popup)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Meta lines, details, hints, field labels."
+      },
+      "timer": {
+        "displayName": "Timer",
+        "purpose": "Live recording clock in popup (48px) and recorder page (56px)."
+      },
+      "mono-small": {
+        "displayName": "Mono Small",
+        "purpose": "Durations, player time, counts, paths, keys."
+      }
+    },
+    "shadows": [
+      {
+        "name": "print-rest",
+        "value": "0 1px 1px rgb(23 24 26 / 0.06), 0 6px 18px -6px rgb(23 24 26 / 0.18)",
+        "purpose": "Every print at rest (dark: 0 1px 1px rgb(0 0 0 / 0.4), 0 10px 26px -8px rgb(0 0 0 / 0.7))."
+      },
+      {
+        "name": "print-lift",
+        "value": "0 2px 4px rgb(23 24 26 / 0.08), 0 18px 40px -12px rgb(23 24 26 / 0.28)",
+        "purpose": "Small print on hover, with a 2px rise and -0.4deg turn."
+      },
+      {
+        "name": "floating-body",
+        "value": "inset 0 0 0 1px #34363a, 0 12px 32px -10px rgb(0 0 0 / 0.55)",
+        "purpose": "Recording bar, cancel confirm, camera bubble over the host page."
+      },
+      {
+        "name": "toast",
+        "value": "0 14px 34px -10px rgb(0 0 0 / 0.45)",
+        "purpose": "Camera-body toast pill."
+      },
+      {
+        "name": "focus",
+        "value": "0 0 0 2px var(--table), 0 0 0 4px var(--blue)",
+        "purpose": "Ring focus; elsewhere outline 2px solid #2f78c4, offset 2px."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Every transition."
+      },
+      {
+        "name": "t-fast",
+        "value": "160ms",
+        "purpose": "Hover, press, colour changes."
+      },
+      {
+        "name": "t-med",
+        "value": "240ms",
+        "purpose": "Print lift, switch knob, player strip."
+      },
+      {
+        "name": "develop",
+        "value": "2200ms overlay / 2400ms filter, ease-out",
+        "purpose": "A fresh print develops from murky to full as the save completes; 1ms under reduced motion."
+      },
+      {
+        "name": "rec-blink",
+        "value": "1.2s steps(2, jump-none) infinite",
+        "purpose": "Live recording dot and Stop icon; off under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "narrow",
+        "value": "960px"
+      },
+      {
+        "name": "small",
+        "value": "560px"
+      },
+      {
+        "name": "player-small",
+        "value": "520px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Default Button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "The everyday page action: Show in folder, Retry, Test connection.",
+      "html": "<button class=\"ds-btn\">Show in folder</button>",
+      "css": ".ds-btn{font-family: \"Geist\", ui-sans-serif, system-ui, sans-serif;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:0;border-radius:6px;cursor:pointer;font-weight:500;font-size:14px;line-height:1;background:#ffffff;color:#17181a;box-shadow:inset 0 0 0 1px #d9dadd,0 1px 1px rgb(23 24 26 / 0.04);transition:box-shadow 160ms cubic-bezier(0.16,1,0.3,1),transform 160ms cubic-bezier(0.16,1,0.3,1);}.ds-btn:hover{box-shadow:inset 0 0 0 1px rgb(98 102 108 / 0.6);}.ds-btn:active{transform:translateY(1px);}.ds-btn:focus-visible{outline:2px solid #2f78c4;outline-offset:2px;}"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Inverted ink; one per action group (Copy link, Save).",
+      "html": "<button class=\"ds-btn-primary\"><svg viewBox=\"0 0 256 256\" width=\"17\" height=\"17\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z\"/></svg>Copy link</button>",
+      "css": ".ds-btn-primary{font-family: \"Geist\", ui-sans-serif, system-ui, sans-serif;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:0;border-radius:6px;cursor:pointer;font-weight:500;font-size:14px;line-height:1;background:#17181a;color:#e4e5e7;transition:background 160ms cubic-bezier(0.16,1,0.3,1),transform 160ms cubic-bezier(0.16,1,0.3,1);}.ds-btn-primary:hover{background:color-mix(in srgb,#17181a 86%,#e4e5e7);}.ds-btn-primary:active{transform:translateY(1px);}.ds-btn-primary:focus-visible{outline:2px solid #2f78c4;outline-offset:2px;}"
+    },
+    {
+      "name": "Start Recording",
+      "kind": "button",
+      "refersTo": "button-start",
+      "description": "The one red full-round record button with a label, on camera body.",
+      "html": "<div class=\"ds-body-pad\"><button class=\"ds-start\"><svg viewBox=\"0 0 256 256\" width=\"18\" height=\"18\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm48-88a48,48,0,1,1-48-48A48.05,48.05,0,0,1,176,128Z\"/></svg>Start recording</button></div>",
+      "css": ".ds-body-pad{background:#1d1e20;padding:16px;width:308px;}.ds-start{font-family: \"Geist\", ui-sans-serif, system-ui, sans-serif;width:100%;height:48px;border:0;border-radius:999px;background:#e5402f;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:600;letter-spacing:-0.005em;box-shadow:inset 0 -2px 0 rgb(0 0 0 / 0.18);transition:background 160ms cubic-bezier(0.16,1,0.3,1),transform 160ms cubic-bezier(0.16,1,0.3,1);}.ds-start:hover{background:#c9321f;}.ds-start:active{transform:translateY(1px);}.ds-start:focus-visible{outline:2px solid #2f78c4;outline-offset:2px;}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Settings and share-page inputs: inset hairline, blue inset focus.",
+      "html": "<input class=\"ds-input\" type=\"url\" placeholder=\"https://tape.example.com\">",
+      "css": ".ds-input{font-family: \"Geist\", ui-sans-serif, system-ui, sans-serif;height:38px;padding:0 12px;border:0;border-radius:6px;background:#ffffff;color:#17181a;font-size:14px;box-shadow:inset 0 0 0 1px #d9dadd;width:280px;}.ds-input::placeholder{color:#62666c;}.ds-input:focus{outline:none;box-shadow:inset 0 0 0 2px #2f78c4;}"
+    },
+    {
+      "name": "Top Bar",
+      "kind": "nav",
+      "refersTo": "top-bar",
+      "description": "Camera-body edge of every page: lens, wordmark, the one stripe mark, destination pill.",
+      "html": "<header class=\"ds-top\"><span class=\"ds-mark\"><span class=\"ds-lens\"></span>Tape<span class=\"ds-stripe\"><i></i><i></i><i></i><i></i><i></i></span></span><a class=\"ds-where\" href=\"#\"><svg viewBox=\"0 0 256 256\" width=\"16\" height=\"16\" fill=\"#f08a24\" aria-hidden=\"true\"><path d=\"M216,72H131.31L104,44.69A15.86,15.86,0,0,0,92.69,40H40A16,16,0,0,0,24,56V200.62A15.4,15.4,0,0,0,39.38,216H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72ZM40,56H92.69l16,16H40ZM216,200H40V88H216Z\"/></svg>Saving to Downloads/Tape</a></header>",
+      "css": ".ds-top{font-family: \"Geist\", ui-sans-serif, system-ui, sans-serif;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:#1d1e20;color:#f1f1ef;box-shadow:0 1px 0 #34363a;}.ds-mark{display:inline-flex;align-items:center;gap:9px;font-weight:600;font-size:16px;letter-spacing:-0.01em;}.ds-lens{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle,#e5402f 0 3.5px,#1d1e20 4px 5.5px,#a9abaf 6px);}.ds-stripe{display:inline-flex;width:30px;height:4px;border-radius:2px;overflow:hidden;margin-left:3px;}.ds-stripe i{flex:1;}.ds-stripe i:nth-child(1){background:#e5402f;}.ds-stripe i:nth-child(2){background:#f08a24;}.ds-stripe i:nth-child(3){background:#f2c230;}.ds-stripe i:nth-child(4){background:#3fa15a;}.ds-stripe i:nth-child(5){background:#2f78c4;}.ds-where{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;font-size:13px;color:#a9abaf;text-decoration:none;box-shadow:inset 0 0 0 1px #34363a;transition:color 160ms cubic-bezier(0.16,1,0.3,1),background 160ms cubic-bezier(0.16,1,0.3,1);}.ds-where:hover{color:#f1f1ef;background:#27292c;}.ds-where:focus-visible{outline:2px solid #2f78c4;outline-offset:2px;}"
+    },
+    {
+      "name": "Destination Row",
+      "kind": "chip",
+      "refersTo": "state-chip",
+      "description": "Where a recording lives: spectrum state chip, name, mono path, action.",
+      "html": "<div class=\"ds-row\"><span class=\"ds-chip ds-orange\"><svg viewBox=\"0 0 256 256\" width=\"18\" height=\"18\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M208,136H48a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V152A16,16,0,0,0,208,136Zm0,64H48V152H208v48Zm0-160H48A16,16,0,0,0,32,56v48a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V56A16,16,0,0,0,208,40Zm0,64H48V56H208v48Z\"/></svg></span><span class=\"ds-rt\"><strong>Saved on this computer</strong><span class=\"ds-path\">Downloads/Tape/Recording 16 Oct 21-53.webm</span></span></div><div class=\"ds-row\"><span class=\"ds-chip ds-red\"><svg viewBox=\"0 0 256 256\" width=\"18\" height=\"18\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M236.8,188.09,149.35,36.22a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM120,104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm8,88a12,12,0,1,1,12-12A12,12,0,0,1,128,192Z\"/></svg></span><span class=\"ds-rt\"><strong>Not saved to this computer</strong><span><span class=\"ds-struck\">Recording.webm</span> <span class=\"ds-why\">Folder not found</span></span></span></div>",
+      "css": ".ds-row{font-family: \"Geist\", ui-sans-serif, system-ui, sans-serif;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:14px;padding:14px 0;border-top:1px solid #d9dadd;color:#17181a;width:420px;}.ds-chip{width:36px;height:36px;border-radius:6px;display:grid;place-items:center;}.ds-orange{background:#f08a24;color:#17181a;}.ds-red{background:#e5402f;color:#fff;}.ds-rt{display:grid;gap:1px;font-size:13px;color:#464a50;min-width:0;}.ds-rt strong{font-weight:600;font-size:14px;color:#17181a;}.ds-path{font-family:\"Geist Mono\", ui-monospace, Menlo, monospace;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.ds-struck{text-decoration:line-through;text-decoration-color:#e5402f;text-decoration-thickness:2px;font-family:\"Geist Mono\", ui-monospace, Menlo, monospace;font-size:12.5px;}.ds-why{color:#e5402f;}"
+    },
+    {
+      "name": "Small Print",
+      "kind": "card",
+      "refersTo": "print-small",
+      "description": "A contact-sheet print: thin sides, thick bottom margin, mono duration, state tags; lifts on hover.",
+      "html": "<a class=\"ds-print\" href=\"#\"><span class=\"ds-photo\"><span class=\"ds-dur\">0:42</span></span><span class=\"ds-margin\"><span class=\"ds-t\">Walkthrough of the review flow</span><span class=\"ds-m\">Today, 21:53<span class=\"ds-tags\"><i class=\"ds-tag\" style=\"background:#f08a24\"></i><i class=\"ds-tag\" style=\"background:#2f78c4\"></i></span></span></span></a>",
+      "css": ".ds-print{font-family: \"Geist\", ui-sans-serif, system-ui, sans-serif;display:block;width:180px;padding:7px 7px 0;background:#fbfbfa;color:#17181a;border-radius:3px;text-decoration:none;box-shadow:0 1px 1px rgb(23 24 26 / 0.06),0 6px 18px -6px rgb(23 24 26 / 0.18);transition:transform 240ms cubic-bezier(0.16,1,0.3,1),box-shadow 240ms cubic-bezier(0.16,1,0.3,1);}.ds-print:hover{transform:translateY(-2px) rotate(-0.4deg);box-shadow:0 2px 4px rgb(23 24 26 / 0.08),0 18px 40px -12px rgb(23 24 26 / 0.28);}.ds-print:focus-visible{outline:2px solid #2f78c4;outline-offset:2px;}.ds-photo{display:block;position:relative;aspect-ratio:16/10;background:#0f1011;}.ds-dur{position:absolute;right:5px;bottom:5px;padding:2px 5px;border-radius:3px;background:rgb(15 16 17 / 0.78);color:#f1f1ef;font:500 11px/1.2 \"Geist Mono\", ui-monospace, Menlo, monospace;}.ds-margin{display:grid;gap:2px;padding:8px 2px 10px;}.ds-t{font-size:13px;font-weight:600;line-height:1.3;}.ds-m{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#6e7177;}.ds-tags{display:inline-flex;gap:3px;}.ds-tag{width:16px;height:16px;border-radius:3px;display:block;}"
+    },
+    {
+      "name": "Recording Bar",
+      "kind": "custom",
+      "refersTo": "recording-bar",
+      "description": "Floating camera-body capsule with only stop, pause, restart, cancel.",
+      "html": "<div class=\"ds-bar\"><button class=\"ds-stop\"><svg viewBox=\"0 0 256 256\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\"><circle cx=\"128\" cy=\"128\" r=\"80\"/></svg><span class=\"ds-time\">1:24</span></button><button class=\"ds-ctl\" aria-label=\"Pause\"><svg viewBox=\"0 0 256 256\" width=\"18\" height=\"18\" fill=\"currentColor\"><path d=\"M200,32H160a16,16,0,0,0-16,16V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H160V48h40ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Zm0,176H56V48H96Z\"/></svg></button><span class=\"ds-sep\"></span><button class=\"ds-ctl\" aria-label=\"Cancel\"><svg viewBox=\"0 0 256 256\" width=\"18\" height=\"18\" fill=\"currentColor\"><path d=\"M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z\"/></svg></button></div>",
+      "css": ".ds-bar{font-family: \"Geist\", ui-sans-serif, system-ui, sans-serif;display:inline-flex;align-items:center;gap:2px;height:48px;padding:0 6px;border-radius:999px;background:#1d1e20;color:#f1f1ef;box-shadow:inset 0 0 0 1px #34363a,0 12px 32px -10px rgb(0 0 0 / 0.55);}.ds-bar button{all:unset;box-sizing:border-box;cursor:pointer;height:36px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background 160ms cubic-bezier(0.16,1,0.3,1);}.ds-bar button:focus-visible{outline:2px solid #2f78c4;outline-offset:2px;}.ds-stop{padding:0 14px 0 10px !important;background:#e5402f;color:#fff;font-size:14px;font-weight:500;}.ds-stop:hover{background:#c9321f;}.ds-time{font-family:\"Geist Mono\", ui-monospace, Menlo, monospace;font-variant-numeric:tabular-nums;min-width:3.4ch;}.ds-ctl{width:36px;color:#f1f1ef;}.ds-ctl:hover{background:#27292c;}.ds-sep{width:1px;height:20px;background:#34363a;margin:0 4px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Instant Print",
+    "overview": "A recording is an instant photograph. The controls you hold are the camera: charcoal plastic, one red button, a short five-band stripe beside the wordmark. What comes out is a print: a cool white frame with a thick bottom margin, lying on a grey tabletop with others you have taken. You stop, the print develops while it saves, and it is yours.\n\nThe world splits cleanly into two materials. **Camera body** is always dark, in both colour schemes, because it is a physical object: the popup, the in-page recording bar, the camera bubble ring, the countdown lens, the player's control strip, the toast, and the 56px top bar of every page. **Tabletop and prints** carry the library, settings, setup and share page; the tabletop follows the colour scheme (cool grey by day, near-black at night) while prints stay paper-white in both, because paper does not invert. Density is calm and functional: each surface shows only the next decision.\n\nColour is a signal system, not decoration. The five spectrum hues each mean one thing about a recording's state, and the full stripe appears only as the 30x4 maker's mark. One family, Geist, carries everything from the 84px countdown numeral to 11px captions; Geist Mono takes over wherever a value is a number that changes or a path you might copy.",
+    "keyCharacteristics": [
+      "Two materials: always-dark camera body for chrome, paper prints on a scheme-following tabletop for content.",
+      "Spectrum hues are state only; the full stripe is a 30x4 mark beside the wordmark and nowhere else.",
+      "Progress is development: a fresh print starts murky and resolves as the save completes.",
+      "One sans family for all roles, mono for timers, durations, sizes, paths and counts.",
+      "Small radii on controls (6px) and prints (3px); full round for the record button, recording bar, bubble and chips that sit on the body."
+    ],
+    "rules": [
+      {
+        "name": "The State-Only Spectrum Rule",
+        "body": "Red records (and marks failure), yellow is paused or working, orange is saved on this computer, blue is a share link, green is a step done. No spectrum hue is used for decoration, emphasis or brand colour, and state is never colour alone: every chip carries an icon and every state a text label.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Stripe Rule",
+        "body": "The five-band stripe appears only as the 30x4 mark beside the wordmark, 2px radius, bands equal width in red, orange, yellow, green, blue order.",
+        "section": "colors"
+      },
+      {
+        "name": "The Paper Does Not Invert Rule",
+        "body": "Prints keep print-white and print ink in dark mode; only the tabletop, table ink, hairlines and fields switch.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "Geist carries display and caption alike; no second display face, no uppercase tracked labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Counter Rule",
+        "body": "Anything that ticks, measures or locates (time, duration, size, count, path) is Geist Mono with tabular numerals.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lying Flat Rule",
+        "body": "Prints rest and lift; nothing else on the tabletop casts a shadow. Buttons and fields use inset 1px strokes instead.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Develop Rule",
+        "body": "A fresh print starts murky (blur 18px, saturation 0.2, contrast 0.6 under a warm-to-slate cast at 86%) and develops to full image over 2200-2400ms as the save completes; progress is the development, never a spinner. Reduced motion jumps straight to the developed print.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "**Do** build chrome from camera body (#1d1e20) with raised plastic and 1px inset seams, and keep it dark in both colour schemes.",
+      "**Do** put content on prints: print-white frames, 3px corners, thick bottom margin holding title and destination marks.",
+      "**Do** map every spectrum hue to exactly one state and pair it with an icon and a text label.",
+      "**Do** set times, durations, sizes, counts and paths in Geist Mono with tabular numerals.",
+      "**Do** show saving as development of the print, and show failure as a struck row with Retry that stays.",
+      "**Do** use Link Blue for every focus ring (2px, 2px offset)."
+    ],
+    "donts": [
+      "**Don't** use the five-band stripe anywhere but the 30x4 mark beside the wordmark.",
+      "**Don't** use a spectrum hue as a brand accent, background wash or decoration; the mic level ring is body ink, not green.",
+      "**Don't** invert prints in dark mode.",
+      "**Don't** add a spinner or progress bar where a print can develop.",
+      "**Don't** put more than stop, pause, restart and cancel on the recording bar.",
+      "**Don't** introduce a second typeface or uppercase tracked labels."
+    ]
+  }
+}
