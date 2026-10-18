@@ -4,7 +4,7 @@ import { saveToDisk, showInFolder, getFolder, chooseFolder, regrantFolder, downl
 import { clock, bytes, when, fileName, icon, esc } from "./lib/format.js";
 import { transcriberReady, transcribeRecording, testTranscriber } from "./lib/transcribe.js";
 import { transcriptText, stamp } from "./lib/transcript.js";
-import { llmReady, summarizeRecording, testLLM } from "./lib/summarize.js";
+import { llmReady, summarizeRecording, testLLM, pingLLM } from "./lib/summarize.js";
 import { connectDrive, disconnectDrive, driveReady, redirectUrl, uploadToDrive, renameOnDrive, trashOnDrive } from "./lib/drive.js";
 
 const $ = (sel, el = document) => el.querySelector(sel);
@@ -615,6 +615,10 @@ function drawThumb(rec, blob, done) {
 
 // ---------- settings ----------
 
+const hostOf = (u) => { try { return new URL(u).hostname; } catch { return ""; } };
+/** Empty counts as local: nothing is configured, nothing is sent. */
+const isLocalUrl = (u) => !u || /^(127\.\d+\.\d+\.\d+|localhost|\[::1\]|::1|[\w-]+\.local)$/i.test(hostOf(u));
+
 function driveGroup() {
   const d = settings.drive;
   const head = `<h2>${icon("google-drive-logo")}Google Drive <span class="opt-tag">Optional</span></h2>`;
@@ -744,13 +748,14 @@ async function renderSettings() {
       </section>
 
       <section class="group">
-        <h2>${icon("sparkle")}Titles and summaries <span class="opt-tag">On this computer</span></h2>
-        <p class="lede">A language model on your machine reads the transcript and writes a title, a summary, key points and chapters.</p>
+        <h2>${icon("sparkle")}Titles and summaries <span class="opt-tag" id="llmWhere">${isLocalUrl(settings.llm.url) ? "On this computer" : "Remote server"}</span></h2>
+        <p class="lede">A language model reads the transcript and writes a title, a summary, key points and chapters. Run one on your machine to keep everything here.</p>
         <form id="llmForm" class="stack" autocomplete="off">
           <div class="field">
             <label for="llmUrl">Model server</label>
             <input id="llmUrl" type="url" inputmode="url" placeholder="http://127.0.0.1:11434/v1" value="${esc(settings.llm.url)}">
-            <span class="hint">Any OpenAI-compatible server: Ollama (<code>http://127.0.0.1:11434/v1</code>), LM Studio (<code>http://127.0.0.1:1234/v1</code>), llama.cpp or MLX.</span>
+            <span class="hint">Any OpenAI-compatible server: Ollama (<code>http://127.0.0.1:11434/v1</code>), LM Studio (<code>http://127.0.0.1:1234/v1</code>), llama.cpp or MLX. For testing, NVIDIA's API (<code>https://integrate.api.nvidia.com/v1</code>) works with your API key.</span>
+            <p class="remote-note" id="llmRemote" ${isLocalUrl(settings.llm.url) ? "hidden" : ""}>${icon("warning")}<span>This server isn't on this computer: transcripts are sent to <strong id="llmHost">${esc(hostOf(settings.llm.url))}</strong> to be summarised.</span></p>
           </div>
           <div class="field-pair">
             <div class="field">
@@ -839,6 +844,12 @@ async function renderSettings() {
   };
   wireDrive();
   $("#llmAuto").onchange = (e) => save({ llm: { ...settings.llm, auto: e.target.checked } });
+  $("#llmUrl").addEventListener("input", (e) => {
+    const local = isLocalUrl(e.target.value.trim());
+    $("#llmRemote").hidden = local;
+    $("#llmHost").textContent = hostOf(e.target.value.trim());
+    $("#llmWhere").textContent = local ? "On this computer" : "Remote server";
+  });
   $("#llmForm").onsubmit = async (e) => {
     e.preventDefault();
     const url = $("#llmUrl").value.trim().replace(/\/+$/, "");
@@ -851,10 +862,14 @@ async function renderSettings() {
     try {
       const models = await testLLM(url, key);
       $("#llmModels").innerHTML = models.map((m) => `<option value="${esc(m)}">`).join("");
-      if (!model && models.length) { model = models[0]; $("#llmModel").value = model; }
+      // A sensible default when none is picked; big catalogues (NVIDIA) list hundreds.
+      const prefer = ["gemma3:12b", "qwen3:8b", "google/gemma-3-12b-it", "openai/gpt-oss-20b", "llama3.2:3b"];
+      if (!model && models.length) { model = prefer.find((m) => models.includes(m)) || models[0]; $("#llmModel").value = model; }
       await save({ llm: { ...settings.llm, url, key, model } });
       if (!models.length) { out.className = "result bad"; out.textContent = "Connected, but the server has no models. Pull one first (for example: ollama pull qwen3:8b)."; return; }
       if (model && !models.includes(model)) { out.className = "result bad"; out.textContent = `Connected. "${model}" isn't on the server; it has ${models.slice(0, 3).join(", ")}.`; return; }
+      out.textContent = `Asking ${model}`;
+      await pingLLM(url, key, model);
       out.className = "result ok";
       out.textContent = `Connected: using ${model}`;
     } catch (err) {

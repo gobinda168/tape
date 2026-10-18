@@ -26,6 +26,22 @@ export async function testLLM(url, key) {
   return (json.data || []).map((m) => m.id).filter(Boolean);
 }
 
+/** A one-token request to the model: proves the key and model name actually work. */
+export async function pingLLM(url, key, model) {
+  const base = trim(url);
+  const res = await fetch(`${base}/v1/chat/completions`, {
+    method: "POST",
+    headers: headers(key),
+    body: JSON.stringify({ model, messages: [{ role: "user", content: "Reply with: ok" }], max_tokens: 1, stream: false }),
+  }).catch(() => null);
+  if (!res) throw new Error(`Nothing is answering at ${base}.`);
+  if (res.status === 401 || res.status === 403) throw new Error(key ? "The server rejected the API key." : "The server needs an API key.");
+  if (!res.ok) {
+    const json = await res.json().catch(() => null);
+    throw new Error(json?.error?.message || json?.detail || `The model answered ${res.status}.`);
+  }
+}
+
 async function chat(messages, cfg) {
   const base = trim(cfg.url);
   const body = { model: cfg.model, messages, temperature: 0.2, stream: false, response_format: { type: "json_object" } };
@@ -38,6 +54,7 @@ async function chat(messages, cfg) {
     }
     const json = await res.json().catch(() => null);
     if (res.ok) return json?.choices?.[0]?.message?.content || "";
+    if (res.status === 401 || res.status === 403) throw new Error("The model server rejected the API key. Check it in Settings.");
     const msg = json?.error?.message || json?.error || `The model server answered ${res.status}.`;
     // Some servers don't know response_format; ask again without it.
     if (attempt === 0 && res.status === 400 && /response_format|json/i.test(String(msg))) { delete body.response_format; continue; }
