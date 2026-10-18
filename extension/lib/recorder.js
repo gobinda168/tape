@@ -81,7 +81,7 @@ export class TapeRecorder {
    * @param {MediaStream[]} o.audio streams whose audio tracks are mixed in
    * @param {boolean} o.playback    play the captured tab's audio back (tab capture mutes the tab)
    */
-  constructor({ video, audio = [], mic = null, playback = false, quality = "1080", onEnded, onMicSilent }) {
+  constructor({ video, audio = [], mic = null, playback = false, quality = "1080", onEnded, onMicSilent, onChunk }) {
     this.streams = [video, ...audio].filter(Boolean);
     this.videoTrack = video.getVideoTracks()[0];
     this.quality = quality;
@@ -108,6 +108,7 @@ export class TapeRecorder {
       }
     }
     this.onMicSilent = onMicSilent;
+    this.onChunk = onChunk;
     this.heard = false;
 
     this.videoTrack.addEventListener("ended", () => {
@@ -128,9 +129,16 @@ export class TapeRecorder {
       mimeType: this.mime || undefined,
       videoBitsPerSecond: BITRATE[this.quality] || BITRATE["1080"],
       audioBitsPerSecond: 128_000,
+      // MP4 only emits data at keyframes, and a still screen may not make one for minutes.
+      // A keyframe every 2 s keeps chunks flowing to disk, so a crash loses seconds, not the take.
+      videoKeyFrameIntervalDuration: 2000,
     });
     this.mime = this.rec.mimeType || this.mime;
-    this.rec.ondataavailable = (e) => e.data.size && this.chunks.push(e.data);
+    this.rec.ondataavailable = (e) => {
+      if (!e.data.size) return;
+      this.chunks.push(e.data);
+      this.onChunk?.(e.data, this.chunks.length - 1, Math.round(this.elapsed));
+    };
     this.rec.start(1000);
     this.segmentStart = performance.now();
     this.state = "recording";

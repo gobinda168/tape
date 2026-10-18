@@ -1,4 +1,4 @@
-import { listRecordings, getRecording, getBlob, getThumb, putThumb, updateRecording, deleteRecording } from "./lib/db.js";
+import { recoverTakes, listRecordings, getRecording, getBlob, getThumb, putThumb, updateRecording, deleteRecording } from "./lib/db.js";
 import { getSettings, setSettings } from "./lib/settings.js";
 import { saveToDisk, showInFolder, getFolder, chooseFolder, regrantFolder, download, testServer, uploadToServer, renameOnServer, deleteOnServer } from "./lib/save.js";
 import { clock, bytes, when, fileName, icon, esc } from "./lib/format.js";
@@ -89,6 +89,9 @@ async function diskSave(id, blob) {
 }
 
 async function renderLibrary(id, fresh) {
+  // Pick up any take that was cut off (crash, closed recorder) before listing.
+  const { rec: live } = await chrome.storage.session.get("rec").catch(() => ({}));
+  await recoverTakes(live && live.status !== "idle" ? live.takeId : undefined).catch(() => {});
   const list = await listRecordings();
   const rec = (id && list.find((r) => r.id === id)) || list[0];
   currentId = rec?.id || null;

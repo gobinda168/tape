@@ -2,7 +2,7 @@
 // the offscreen recorder writes, the library reads.
 
 const DB_NAME = "tape";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise;
 
@@ -18,6 +18,9 @@ function open() {
       if (!db.objectStoreNames.contains("blobs")) db.createObjectStore("blobs");
       if (!db.objectStoreNames.contains("thumbs")) db.createObjectStore("thumbs");
       if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
+      // v2: a take in progress, written chunk by chunk so a crash can't lose it.
+      if (!db.objectStoreNames.contains("takes")) db.createObjectStore("takes", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("chunks")) db.createObjectStore("chunks"); // key [takeId, seq]
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -91,3 +94,46 @@ export const deleteRecording = (id) =>
 export const kvGet = (key) => tx(["kv"], "readonly", (t) => req(t.objectStore("kv").get(key)));
 export const kvSet = (key, value) => tx(["kv"], "readwrite", (t) => { t.objectStore("kv").put(value, key); });
 export const kvDelete = (key) => tx(["kv"], "readwrite", (t) => { t.objectStore("kv").delete(key); });
+
+// ---------- takes in progress ----------
+
+const takeRange = (id) => IDBKeyRange.bound([id, 0], [id, Infinity]);
+
+export const beginTake = (meta) =>
+  tx(["takes", "chunks"], "readwrite", (t) => {
+    t.objectStore("chunks").delete(takeRange(meta.id)); // a restart begins the same take again
+    t.objectStore("takes").put({ ...meta, durationMs: 0 });
+  });
+
+export const putChunk = (id, seq, blob, durationMs) =>
+  tx(["takes", "chunks"], "readwrite", async (t) => {
+    t.objectStore("chunks").put(blob, [id, seq]);
+    const takes = t.objectStore("takes");
+    const take = await req(takes.get(id));
+    if (take) takes.put({ ...take, durationMs });
+  });
+
+export const endTake = (id) =>
+  tx(["takes", "chunks"], "readwrite", (t) => {
+    t.objectStore("takes").delete(id);
+    t.objectStore("chunks").delete(takeRange(id));
+  });
+
+/** Turn takes that never reached Stop into library recordings. Skips the take still recording. */
+export async function recoverTakes(activeId) {
+  const takes = await tx(["takes"], "readonly", (t) => req(t.objectStore("takes").getAll()));
+  const recovered = [];
+  for (const take of takes) {
+    if (take.id === activeId) continue;
+    const parts = await tx(["chunks"], "readonly", (t) => req(t.objectStore("chunks").getAll(takeRange(take.id))));
+    if (parts.length) {
+      const blob = new Blob(parts, { type: take.mime || "video/webm" });
+      const { id: _take, mime, ...meta } = take;
+      const id = newId();
+      await addRecording({ ...meta, id, mime: blob.type, size: blob.size, title: "Recovered recording", recovered: true, saves: {} }, blob);
+      recovered.push(id);
+    }
+    await endTake(take.id);
+  }
+  return recovered;
+}

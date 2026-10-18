@@ -8,6 +8,7 @@
 // render it, and so it survives the worker being suspended mid-recording.
 
 import { getSettings } from "./lib/settings.js";
+import { recoverTakes } from "./lib/db.js";
 
 const IDLE = { status: "idle" };
 const COUNTDOWN_MS = 3000;
@@ -21,7 +22,18 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason === "install") chrome.tabs.create({ url: "app.html#/setup" });
 });
 
-chrome.runtime.onStartup.addListener(() => setState(IDLE));
+// After a browser crash or quit mid-recording, the take's chunks are still on disk.
+chrome.runtime.onStartup.addListener(async () => {
+  await setState(IDLE);
+  await recoverTakes().catch(() => []);
+});
+
+// A take that never reached Stop (recorder closed or crashed) goes to the library, not the bin.
+async function rescue() {
+  const ids = await recoverTakes().catch(() => []);
+  if (ids.length) await openLibrary(`#/r/${ids[0]}?fresh=1`);
+  return ids.length > 0;
+}
 
 async function getState() {
   const { rec } = await chrome.storage.session.get("rec");
@@ -100,6 +112,7 @@ async function start(opts) {
     cameraId: opts.cameraId ?? settings.cameraId,
     micId: opts.micId ?? settings.micId,
     micOn: opts.micOn ?? settings.micOn,
+    takeId: crypto.randomUUID(),
     quality: settings.quality,
     bubbleSize: settings.bubbleSize,
     countdown: settings.countdown,
@@ -195,6 +208,8 @@ async function stop() {
   await setState(IDLE);
   if (res?.ok && res.id) {
     await openLibrary(`#/r/${res.id}?fresh=1`);
+  } else if (await rescue()) {
+    // The recorder couldn't finish the file, but every second it wrote is in the library.
   } else {
     await openLibrary(`#/?error=${encodeURIComponent(res?.error || "The recording could not be saved.")}`);
   }
@@ -307,6 +322,7 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   const s = await getState();
   if (s.host === "tab" && s.recorderTabId === tabId && s.status !== "idle" && s.status !== "saving") {
     await setState(IDLE);
+    await rescue();
   }
 });
 
