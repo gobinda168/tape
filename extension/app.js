@@ -538,7 +538,7 @@ async function renderSetup() {
         <span class="chip ${mediaDone ? "tone-green" : "tone-idle"}">${icon(mediaDone ? "check" : "video-camera")}</span>
         <div>
           <h2>Camera and microphone</h2>
-          <p>${mediaDone ? "Allowed. Tape only turns them on while you record." : cam === "denied" || mic === "denied" ? "Blocked. Click the camera icon at the right end of the address bar, allow both, then reload this page." : "Chrome asks once for both."}</p>
+          <p>${mediaDone ? "Allowed. Tape only turns them on while you record." : cam === "denied" || mic === "denied" ? "Blocked. Click the camera icon at the right end of the address bar, allow both, then reload this page." : "Chrome asks once for each."}</p>
           <div class="cam-check" ${mediaDone ? "" : "hidden"}><video id="setupCam" autoplay muted playsinline></video></div>
         </div>
         ${mediaDone ? "" : `<button type="button" class="btn primary" id="allowMedia">Allow</button>`}
@@ -573,12 +573,18 @@ async function renderSetup() {
     }).catch(() => {});
   }
   $("#allowMedia")?.addEventListener("click", async () => {
-    try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      s.getTracks().forEach((t) => t.stop());
-    } catch (e) {
-      toast(e.name === "NotAllowedError" ? "Chrome blocked access" : "No camera or microphone found");
+    // Ask for each on its own: a Mac with no camera (a Mac mini) would fail a
+    // combined request and leave the microphone unasked too.
+    const failed = [];
+    for (const [kind, name] of [["audio", "microphone"], ["video", "camera"]]) {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ [kind]: true });
+        s.getTracks().forEach((t) => t.stop());
+      } catch (e) {
+        failed.push(e.name === "NotAllowedError" ? `Chrome blocked the ${name}` : `No ${name} found`);
+      }
     }
+    if (failed.length) toast(failed.join(" · "));
     renderSetup();
   });
   $("#setupFolder").onclick = async () => {
