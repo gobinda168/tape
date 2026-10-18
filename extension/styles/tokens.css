@@ -1,4 +1,7 @@
-/* Tape tokens. Instant-camera body for chrome, cool white prints on a grey tabletop for the library. */
+/* Tape tokens. "Screening room": cool neutral surfaces that step back so the recording
+   is the brightest thing on screen, and one accent, record red, for recording and Stop.
+   Shape rule: controls 10px, panels and video frames 16px, full round only for the
+   things you record with (record and stop buttons, the camera bubble, the recording bar). */
 @font-face {
   font-family: "Geist";
   src: url("../fonts/Geist-Variable.woff2") format("woff2");
@@ -13,88 +16,58 @@
 }
 
 :root {
-  /* Spectrum: state only. */
-  --red: #e5402f;
-  --red-press: #c9321f;
-  --orange: #f08a24;
-  --yellow: #f2c230;
-  --green: #3fa15a;
-  --blue: #2f78c4;
+  /* The one accent. */
+  --red: #f2412f;
+  --red-press: #d8331f;
+  --red-ink: #ff8f80; /* red text on dark */
+  /* Paused is the only other state colour (recording bar, popup). */
+  --yellow: #f5c542;
 
-  /* Camera body (popup, recording bar). Always dark: it is a physical object. */
-  --body: #1d1e20;
-  --body-raised: #27292c;
-  --body-line: #34363a;
-  --body-ink: #f1f1ef;
-  --body-ink-2: #a9abaf;
-  --body-ink-3: #8e9196;
-  --lens: #0f1011;
+  /* Instrument surfaces: popup, recording bar, recorder tab. Always dark. */
+  --body: #111317;
+  --body-raised: #1c1f24;
+  --body-hover: #24282e;
+  --body-line: rgb(255 255 255 / 0.09);
+  --body-ink: #f3f4f6;
+  --body-ink-2: #aab0ba;
+  --body-ink-3: #868d99;
+  --lens: #08090b;
 
-  /* Tabletop + prints (library). */
-  --table: #e4e5e7;
-  --table-2: #d8d9dc;
-  --print: #fbfbfa;
-  --print-edge: #d2d3d6;
-  --ink: #17181a;
-  --ink-2: #4c4f54;
-  --ink-3: #6e7177;
-  --line: #d9dadd;
-  --field: #ffffff;
-  /* Text that sits on the tabletop (prints keep --ink, they are always paper). */
-  --tink: #17181a;
-  --tink-2: #464a50;
-  --tink-3: #62666c;
-  --shadow-print: 0 1px 1px rgb(23 24 26 / 0.06), 0 6px 18px -6px rgb(23 24 26 / 0.18);
-  --shadow-lift: 0 2px 4px rgb(23 24 26 / 0.08), 0 18px 40px -12px rgb(23 24 26 / 0.28);
-  --focus: 0 0 0 2px var(--table), 0 0 0 4px var(--blue);
+  /* Pages (library, settings, setup). Dark by choice, not by default: you come here to
+     watch video, and a dark room lets the recording be the light source. */
+  --bg: #08090b;
+  --surface: rgb(255 255 255 / 0.035);
+  --surface-solid: #111317;
+  --surface-2: rgb(255 255 255 / 0.06);
+  --surface-hover: rgb(255 255 255 / 0.08);
+  --line: rgb(255 255 255 / 0.08);
+  --line-strong: rgb(255 255 255 / 0.16);
+  --edge: inset 0 1px 0 rgb(255 255 255 / 0.06); /* light catching the top edge of a panel */
+  --text: #f4f5f7;
+  --text-2: #a9afb9;
+  --text-3: #868d99;
+  --shadow-frame: 0 1px 2px rgb(0 0 0 / 0.5), 0 40px 90px -30px rgb(0 0 0 / 0.9);
+  --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.5), 0 18px 44px -14px rgb(0 0 0 / 0.85);
 
   --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
-  --r-control: 6px;
-  --r-print: 3px;
+  --r-control: 10px;
+  --r-panel: 16px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --t-fast: 160ms;
-  --t-med: 240ms;
+  --t-med: 260ms;
 
-  color-scheme: light;
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --table: #141516;
-    --table-2: #1c1d1f;
-    --print: #f4f4f2;
-    --print-edge: #2b2d30;
-    --ink: #17181a;
-    --ink-2: #4c4f54;
-    --ink-3: #6e7177;
-    --line: #2c2e31;
-    --field: #1f2023;
-    --tink: #ededeb;
-    --tink-2: #b4b6ba;
-    --tink-3: #8d9095;
-    --shadow-print: 0 1px 1px rgb(0 0 0 / 0.4), 0 10px 26px -8px rgb(0 0 0 / 0.7);
-    --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.5), 0 24px 50px -14px rgb(0 0 0 / 0.8);
-    color-scheme: dark;
-  }
-}
 
-/* The five-band stripe: the mark of the camera body. */
-.stripe {
-  display: inline-flex;
-  height: 4px;
-  width: 30px;
-  border-radius: 2px;
-  overflow: hidden;
-  vertical-align: middle;
+/* The mark: a lens with a red centre. */
+.lens {
+  width: 18px; height: 18px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle, var(--red) 0 4px, transparent 4.5px), var(--lens);
+  box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.22), 0 0 0 1px rgb(0 0 0 / 0.2);
 }
-.stripe > i { flex: 1; }
-.stripe > i:nth-child(1) { background: var(--red); }
-.stripe > i:nth-child(2) { background: var(--orange); }
-.stripe > i:nth-child(3) { background: var(--yellow); }
-.stripe > i:nth-child(4) { background: var(--green); }
-.stripe > i:nth-child(5) { background: var(--blue); }
 
 .icon { display: inline-flex; width: 1em; height: 1em; flex: none; }
 .icon svg { width: 100%; height: 100%; display: block; }
@@ -102,5 +75,5 @@
 .tnum { font-variant-numeric: tabular-nums; }
 .sr-only {
   position: absolute; width: 1px; height: 1px; overflow: hidden;
-  clip: rect(0 0 0 0); white-space: nowrap;
+  clip-path: inset(50%); white-space: nowrap;
 }

@@ -99,14 +99,10 @@ async function renderLibrary(id, fresh) {
   if (!rec) {
     view.innerHTML = `
       <div class="library empty">
-        <section class="stage">
-          <article class="print big blank">
-            <div class="photo"><div class="blank-art">${icon("record")}</div></div>
-            <div class="margin">
-              <h1 class="empty-title">No recordings yet</h1>
-              <p class="meta">Click Tape in the toolbar, or press <kbd>Alt</kbd><kbd>Shift</kbd><kbd>R</kbd> on any page. Recordings save to this computer.</p>
-            </div>
-          </article>
+        <section class="empty-state">
+          <div class="empty-orb" aria-hidden="true"><span class="lens"></span></div>
+          <h1 class="empty-title">Your recordings will live here</h1>
+          <p class="empty-copy">Click Tape in the toolbar, or press <span class="keys"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>R</kbd></span> on any page. Every take is saved to this computer the moment you stop.</p>
         </section>
       </div>`;
     return;
@@ -120,6 +116,7 @@ async function renderLibrary(id, fresh) {
     <div class="library">
       <section class="stage" aria-label="Selected recording">
         <article class="print big ${fresh ? "developing" : ""}" id="print">
+          <div class="glow" aria-hidden="true">${thumb ? `<img src="${objectUrl("t:" + rec.id, thumb)}" alt="">` : ""}</div>
           <div class="photo" id="player" tabindex="-1"></div>
           <div class="margin">
             <label class="sr-only" for="title">Title</label>
@@ -150,9 +147,9 @@ async function renderLibrary(id, fresh) {
       </section>
 
       <aside class="sheet" aria-label="All recordings">
-        <h2>All recordings <span class="count tnum">${list.length}</span></h2>
+        <h2>Recordings <span class="count tnum">${list.length}</span></h2>
         <ul class="grid">
-          ${others.map((r) => sheetItem(r, r.id === rec.id, fresh && r.id === rec.id)).join("")}
+          ${others.map((r, i) => sheetItem(r, r.id === rec.id, fresh && r.id === rec.id, i)).join("")}
         </ul>
       </aside>
     </div>`;
@@ -182,7 +179,7 @@ async function renderLibrary(id, fresh) {
   }
 }
 
-function sheetItem(r, active, developing = false) {
+function sheetItem(r, active, developing = false, i = 0) {
   const disk = r.saves?.disk?.state;
   const server = r.saves?.server?.state;
   const marks = [
@@ -192,7 +189,7 @@ function sheetItem(r, active, developing = false) {
     r.noSound ? `<span class="tag tone-red" title="No sound: the mic was muted">${icon("microphone-slash")}</span>` : "",
   ].join("");
   return `
-    <li>
+    <li style="--i:${i}">
       <a class="print small${active ? " active" : ""}${developing ? " developing" : ""}" href="#/r/${r.id}" ${active ? 'aria-current="true"' : ""}>
         <span class="photo"><img data-thumb="${r.id}" alt="" hidden><span class="dur tnum">${clock(r.durationMs)}</span></span>
         <span class="margin">
@@ -394,6 +391,8 @@ function drawThumb(rec, blob, done) {
       if (img) { img.src = objectUrl("t:" + rec.id, t); img.hidden = false; }
       const big = view.querySelector("#print video");
       if (big && currentId === rec.id && !big.poster) big.poster = objectUrl("t:" + rec.id, t);
+      const glow = view.querySelector("#print .glow");
+      if (glow && currentId === rec.id && !glow.firstChild) glow.innerHTML = `<img src="${objectUrl("t:" + rec.id, t)}" alt="">`;
     }, "image/jpeg", 0.82);
   }, { once: true });
 }
@@ -455,7 +454,7 @@ async function renderSettings() {
           </select>
         </div>
         <div class="field-row">
-          <span><strong>Keyboard shortcuts</strong><span class="hint"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>R</kbd> start or stop, <kbd>Alt</kbd><kbd>Shift</kbd><kbd>P</kbd> pause</span></span>
+          <span><strong>Keyboard shortcuts</strong><span class="hint"><span class="keys"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>R</kbd></span> start or stop, <span class="keys"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>P</kbd></span> pause</span></span>
           <button type="button" class="btn" id="shortcuts">${icon("keyboard")}Change</button>
         </div>
       </section>
@@ -562,7 +561,7 @@ async function renderSetup() {
         <span class="chip tone-idle">${icon("keyboard")}</span>
         <div>
           <h2>Pin Tape and record</h2>
-          <p>Click the puzzle piece in Chrome's toolbar and pin Tape. Then press <kbd>Alt</kbd><kbd>Shift</kbd><kbd>R</kbd> on any page.</p>
+          <p>Click the puzzle piece in Chrome's toolbar and pin Tape. Then press <span class="keys"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>R</kbd></span> on any page.</p>
         </div>
       </section>
 
