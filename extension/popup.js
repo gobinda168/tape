@@ -31,6 +31,7 @@ const openApp = (hash = "") => chrome.tabs.create({ url: chrome.runtime.getURL("
 $("library").onclick = () => openApp("#/");
 $("settings").onclick = () => openApp("#/settings");
 $("allow").onclick = () => openApp("#/setup");
+$("allowCamera").onclick = $("allowMic").onclick = () => openApp("#/setup");
 $("skip").onclick = async () => {
   settings = await setSettings({ skippedSetup: true, mode: "screen", micOn: false });
   show("idle");
@@ -56,6 +57,9 @@ async function fillDevices() {
   const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
   const fill = (sel, kind, chosen, granted) => {
     const list = devices.filter((d) => d.kind === kind && d.deviceId);
+    // A popup can't show Chrome's permission prompt, so "not allowed" links to setup.
+    sel.hidden = !granted;
+    $(kind === "videoinput" ? "allowCamera" : "allowMic").hidden = granted;
     sel.innerHTML = "";
     if (!granted || !list.length) {
       sel.add(new Option(granted ? "None found" : "Not allowed yet", ""));
