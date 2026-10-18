@@ -34,6 +34,24 @@ The camera bubble is an extension iframe, so camera permission belongs to Tape, 
 
 Chrome does not allow capturing its own pages (`chrome://`, the Web Store). Record a window or the screen there instead.
 
+## Transcription with a local model (optional)
+
+Tape can transcribe a recording with a speech model **running on your own computer**. The
+audio goes only to that model. Each transcript line is timestamped: click it to jump the
+video there, follow along as it plays, or copy the whole thing.
+
+Tape talks to any server with an OpenAI-style `POST /v1/audio/transcriptions` endpoint
+(whisper.cpp's server, Speaches, LocalAI, ...). This repo includes one for
+[Parakeet Redux](https://huggingface.co/moondream/parakeet-redux) (178 MB, 25 languages,
+word timestamps, about 15-40x real time on a Mac):
+
+```sh
+uv run transcribe/tape_transcribe.py     # first run downloads the model; listens on 127.0.0.1:8790
+```
+
+In Tape: **Settings -> Transcription**, model server `http://127.0.0.1:8790`, **Save and
+test**. Turn on **Transcribe every new recording** to have it run after each save.
+
 ## Google Drive (optional)
 
 Tape can save each recording to a **Tape** folder in your own Google Drive and, if you turn

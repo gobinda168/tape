@@ -15,6 +15,8 @@ export const DEFAULTS = {
   autoUpload: false,
   // Google Drive: the user's own OAuth client; email is the connected account.
   drive: { clientId: "", email: "", name: "", autoUpload: false, anyoneWithLink: false },
+  // Transcription by a model on this computer (OpenAI-style /v1/audio/transcriptions).
+  transcribe: { url: "", model: "", key: "", auto: false },
   skippedSetup: false,
 };
 
@@ -25,6 +27,7 @@ export async function getSettings() {
     ...(settings || {}),
     server: { ...DEFAULTS.server, ...(settings?.server || {}) },
     drive: { ...DEFAULTS.drive, ...(settings?.drive || {}) },
+    transcribe: { ...DEFAULTS.transcribe, ...(settings?.transcribe || {}) },
   };
 }
 

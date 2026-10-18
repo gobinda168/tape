@@ -2,6 +2,8 @@ import { recoverTakes, listRecordings, getRecording, getBlob, getThumb, putThumb
 import { getSettings, setSettings } from "./lib/settings.js";
 import { saveToDisk, showInFolder, getFolder, chooseFolder, regrantFolder, download, testServer, uploadToServer, renameOnServer, deleteOnServer } from "./lib/save.js";
 import { clock, bytes, when, fileName, icon, esc } from "./lib/format.js";
+import { transcriberReady, transcribeRecording, testTranscriber } from "./lib/transcribe.js";
+import { transcriptText, stamp } from "./lib/transcript.js";
 import { connectDrive, disconnectDrive, driveReady, redirectUrl, uploadToDrive, renameOnDrive, trashOnDrive } from "./lib/drive.js";
 
 const $ = (sel, el = document) => el.querySelector(sel);
@@ -146,6 +148,8 @@ async function renderLibrary(id, fresh) {
             <p class="fine">Files already saved on your computer stay where they are.</p>
           </div>
         </div>
+
+        <section class="transcript" id="transcript" aria-label="Transcript"></section>
       </section>
 
       <aside class="sheet" aria-label="All recordings">
@@ -172,6 +176,7 @@ async function renderLibrary(id, fresh) {
     });
   }
   paintLives(rec);
+  paintTranscript(rec);
   wireLibrary(rec, blob);
 
   if (!thumb && blob) makeThumb(rec, blob);
@@ -200,6 +205,47 @@ function sheetItem(r, active, developing = false, i = 0) {
         </span>
       </a>
     </li>`;
+}
+
+// ---------- transcript ----------
+
+function paintTranscript(rec) {
+  const el = $("#transcript");
+  if (!el) return;
+  const t = rec.transcript;
+  const ready = transcriberReady(settings);
+  const head = (right = "") => `<header class="tr-head"><h2>${icon("sparkle")}Transcript</h2>${right}</header>`;
+  if (t?.state === "working") {
+    el.className = "transcript is-working";
+    el.innerHTML = `${head(`<span class="tr-note">Listening on this computer</span>`)}
+      <div class="tr-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>`;
+    return;
+  }
+  if (t?.state === "done") {
+    el.className = "transcript is-done";
+    el.innerHTML = `${head(`<span class="tr-model">${icon("plugs-connected")}${esc(t.model)}</span>
+        <button type="button" class="btn" data-tr="copy">${icon("copy")}Copy</button>
+        <button type="button" class="btn quiet" data-tr="run" title="Transcribe again">${icon("arrows-clockwise")}</button>`)}
+      <ol class="tr-list">${t.segments.map((s, i) => `
+        <li><button type="button" class="tr-seg" data-i="${i}" data-t="${s.start}"><span class="ts tnum">${stamp(s.start)}</span><span class="tx">${esc(s.text)}</span></button></li>`).join("")}
+      </ol>`;
+    return;
+  }
+  el.className = "transcript";
+  const error = t?.state === "error" ? `<p class="tr-error">${icon("warning")}<span>${esc(t.error)}</span></p>` : "";
+  el.innerHTML = `${head()}
+    ${error}
+    <div class="tr-empty">
+      <p>${ready ? "Turn what you said into text you can search, copy and click to jump around the video. It runs on the model on this computer." : `Turn what you said into text you can search, copy and click to jump around the video, with a model running on this computer. <a class="link" href="#/settings">Connect a model</a>`}</p>
+      ${ready ? `<button type="button" class="btn primary" data-tr="run">${icon("sparkle")}${t?.state === "error" ? "Try again" : "Transcribe"}</button>` : ""}
+    </div>`;
+}
+
+async function runTranscript(id, blob) {
+  const cur = await getRecording(id);
+  paintTranscript({ ...cur, transcript: { state: "working" } });
+  const out = await transcribeRecording(id, blob);
+  if (currentId === id) paintTranscript(out);
 }
 
 function row({ tone, ico, name, detail, state, actions = "" }) {
@@ -316,6 +362,42 @@ function wireLibrary(rec, blob) {
   });
   title.addEventListener("blur", commit);
 
+  // Transcript: run it, copy it, and click a line to jump the video there.
+  const video = () => $("#player video");
+  $("#transcript").addEventListener("click", async (e) => {
+    const seg = e.target.closest(".tr-seg");
+    if (seg) {
+      const v = video();
+      if (v) { v.currentTime = +seg.dataset.t; v.play().catch(() => {}); }
+      return;
+    }
+    const b = e.target.closest("button[data-tr]");
+    if (!b) return;
+    if (b.dataset.tr === "run") return runTranscript(rec.id, blob);
+    if (b.dataset.tr === "copy") {
+      const fresh = await getRecording(rec.id);
+      navigator.clipboard.writeText(transcriptText(fresh.transcript)).then(() => toast("Transcript copied"), () => toast("Could not copy"));
+    }
+  });
+  // Follow along: the line being spoken lights up while the video plays.
+  let lit = -1;
+  const follow = () => {
+    const v = video();
+    const segs = [...view.querySelectorAll(".tr-seg")];
+    if (!v || !segs.length) return;
+    let i = segs.findLastIndex((b) => +b.dataset.t <= v.currentTime + 0.05);
+    if (i === lit) return;
+    segs[lit]?.classList.remove("now");
+    lit = i;
+    if (i < 0) return;
+    segs[i].classList.add("now");
+    const list = segs[i].closest(".tr-list");
+    const top = segs[i].offsetTop - list.offsetTop;
+    if (top < list.scrollTop || top > list.scrollTop + list.clientHeight - 40) list.scrollTo({ top: top - 60, behavior: "smooth" });
+  };
+  const attach = () => { const v = video(); if (v) v.addEventListener("timeupdate", follow); else setTimeout(attach, 200); };
+  attach();
+
   $("#lives").addEventListener("click", async (e) => {
     const b = e.target.closest("button[data-act]");
     if (!b) return;
@@ -387,6 +469,7 @@ async function develop(rec, blob) {
   }, wait);
 
   if (saved?.saves?.disk?.state === "saved") toast(`Saved to ${saved.saves.disk.where === "folder" ? saved.saves.disk.folder : "Downloads/Tape"}`);
+  if (settings.transcribe.auto && transcriberReady(settings) && !rec.noSound) runTranscript(rec.id, blob);
   if (settings.drive.autoUpload && driveReady(settings)) await driveUpload(rec.id, blob);
   if (settings.autoUpload && settings.server.url && settings.server.token) {
     await makeThumb(rec, blob); // the share page uses it as the poster
@@ -547,6 +630,33 @@ async function renderSettings() {
       <section class="group" id="driveGroup">${driveGroup()}</section>
 
       <section class="group">
+        <h2>${icon("sparkle")}Transcription <span class="opt-tag">On this computer</span></h2>
+        <p class="lede">Tape sends a recording's audio only to a speech model running on your machine and shows a transcript you can click to jump around the video.</p>
+        <form id="trForm" class="stack" autocomplete="off">
+          <div class="field">
+            <label for="trUrl">Model server</label>
+            <input id="trUrl" type="url" inputmode="url" placeholder="http://127.0.0.1:8790" value="${esc(settings.transcribe.url)}">
+            <span class="hint">Any server with an OpenAI-style <code>/v1/audio/transcriptions</code> endpoint. Tape's Parakeet Redux server: <code>uv run transcribe/tape_transcribe.py</code></span>
+          </div>
+          <div class="field-pair">
+            <div class="field">
+              <label for="trModel">Model <span class="hint-inline">optional</span></label>
+              <input id="trModel" type="text" spellcheck="false" placeholder="parakeet-redux" value="${esc(settings.transcribe.model)}">
+            </div>
+            <div class="field">
+              <label for="trKey">API key <span class="hint-inline">optional</span></label>
+              <input id="trKey" type="password" spellcheck="false" value="${esc(settings.transcribe.key)}">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Save and test</button>
+            <span class="result" id="trResult" role="status"></span>
+          </div>
+        </form>
+        ${sw("trAuto", settings.transcribe.auto, "Transcribe every new recording", "Runs right after the recording is saved to this computer.")}
+      </section>
+
+      <section class="group">
         <h2>Recording</h2>
         ${sw("countdown", settings.countdown, "Count down from 3", "Gives you a moment before the recording starts.")}
         <div class="field-row">
@@ -613,6 +723,26 @@ async function renderSettings() {
     try { await chooseFolder(); await save({ saveTo: "folder" }); renderSettings(); toast("Folder saved"); } catch {}
   };
   wireDrive();
+  $("#trAuto").onchange = (e) => save({ transcribe: { ...settings.transcribe, auto: e.target.checked } });
+  $("#trForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const url = $("#trUrl").value.trim().replace(/\/+$/, "");
+    const model = $("#trModel").value.trim();
+    const key = $("#trKey").value.trim();
+    await save({ transcribe: { ...settings.transcribe, url, model, key } });
+    const out = $("#trResult");
+    if (!url) { out.className = "result"; out.textContent = "Transcription turned off."; return; }
+    out.className = "result";
+    out.textContent = "Testing";
+    try {
+      const models = await testTranscriber(url, key);
+      out.className = "result ok";
+      out.textContent = models.length ? `Connected: ${models.slice(0, 3).join(", ")}` : "Connected";
+    } catch (err) {
+      out.className = "result bad";
+      out.textContent = err.message;
+    }
+  };
   $("#countdown").onchange = (e) => save({ countdown: e.target.checked });
   $("#autoUpload").onchange = (e) => save({ autoUpload: e.target.checked });
   $("#quality").onchange = (e) => save({ quality: e.target.value });
