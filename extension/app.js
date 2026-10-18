@@ -2,7 +2,7 @@ import { recoverTakes, listRecordings, getRecording, getBlob, getThumb, putThumb
 import { getSettings, setSettings } from "./lib/settings.js";
 import { saveToDisk, showInFolder, getFolder, chooseFolder, regrantFolder, download, testServer, uploadToServer, renameOnServer, deleteOnServer } from "./lib/save.js";
 import { clock, bytes, when, fileName, icon, esc } from "./lib/format.js";
-import { transcriberReady, transcribeRecording, testTranscriber } from "./lib/transcribe.js";
+import { transcriberReady, transcribeRecording, testTranscriber, detectLocalTranscriber } from "./lib/transcribe.js";
 import { transcriptText, stamp } from "./lib/transcript.js";
 import { llmReady, summarizeRecording, testLLM, pingLLM } from "./lib/summarize.js";
 import { connectDrive, disconnectDrive, driveReady, redirectUrl, uploadToDrive, renameOnDrive, trashOnDrive } from "./lib/drive.js";
@@ -76,12 +76,24 @@ async function route() {
   if (query.get("error")) banner(query.get("error"));
   settings = await getSettings();
   paintWhere();
+  await findTranscriber();
   if (parts[0] === "settings") return renderSettings();
   if (parts[0] === "setup") return renderSetup();
   return renderLibrary(parts[0] === "r" ? parts[1] : null, query.get("fresh") === "1");
 }
 
 window.addEventListener("hashchange", route);
+
+// Transcription needs no setup when Tape's Parakeet server is already running here.
+let lookedForTranscriber = false;
+async function findTranscriber() {
+  if (lookedForTranscriber || settings.transcribe.url) return;
+  lookedForTranscriber = true;
+  const found = await detectLocalTranscriber();
+  if (!found) return;
+  settings = await setSettings({ transcribe: { ...settings.transcribe, url: found.url } });
+  toast(`Found ${found.model.split("/").pop() || "a speech model"} on this computer. Transcription is on.`);
+}
 
 // ---------- library ----------
 
@@ -291,7 +303,11 @@ function paintSummary(rec) {
   el.innerHTML = `${head()}
     ${error}
     <div class="tr-empty">
-      <p>${ready ? "A title, a short summary, key points and chapters, written by the language model on this computer from the complete transcript." : `Get a title, a summary and chapters from the transcript with a language model on this computer. <a class="link" href="#/settings">Connect a model</a>`}</p>
+      <p>${!ready
+        ? `Get a title, a summary and chapters from the transcript with a language model. <a class="link" href="#/settings">Connect a model</a>`
+        : hasTranscript || transcriberReady(settings)
+          ? `A title, a short summary, key points and chapters, written by ${esc(settings.llm.model)} from the complete transcript.`
+          : `Summaries are written from the transcript, and transcription isn't set up yet. <a class="link" href="#/settings">Connect a speech model</a>, for example Tape's Parakeet server on <code>127.0.0.1:8790</code>.`}</p>
       ${canRun ? `<button type="button" class="btn primary" data-sum="run">${icon("sparkle")}${s?.state === "error" ? "Try again" : hasTranscript ? "Summarize" : "Transcribe and summarize"}</button>` : ""}
     </div>`;
 }

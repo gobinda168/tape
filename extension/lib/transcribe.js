@@ -79,3 +79,16 @@ export async function transcribeRecording(id, blob) {
   }
 }
 
+
+const LOCAL_TRANSCRIBER = "http://127.0.0.1:8790";
+
+/** Tape's own Parakeet Redux server, if it's running on this computer (answers in < 1 s). */
+export async function detectLocalTranscriber() {
+  try {
+    const res = await fetch(`${LOCAL_TRANSCRIBER}/health`, { signal: AbortSignal.timeout(800) });
+    const json = await res.json();
+    return res.ok && json.ok ? { url: LOCAL_TRANSCRIBER, model: json.model || "" } : null;
+  } catch {
+    return null;
+  }
+}
