@@ -1,6 +1,6 @@
 // Tape in-page overlay: countdown, recording bar and camera bubble.
-// Runs on every page (manifest) and is also injected when a recording starts, so it
-// guards against running twice. Everything lives in a closed shadow root.
+// Injected by the worker only into tabs a recording shows on; a tab can get it more
+// than once (navigation, refocus), so the newest copy takes over. Everything lives in a closed shadow root.
 
 (() => {
   if (window.top !== window) return;
@@ -22,15 +22,21 @@
   let tick = null;
   let myTabId = null;
 
-  // Fonts must be registered on the document to reach the shadow root.
-  try {
-    const add = (family, file) => {
-      const f = new FontFace(family, `url(${ext(file)})`, { weight: "100 900" });
-      f.load().then(() => document.fonts.add(f)).catch(() => {});
-    };
-    add("Tape Geist", "fonts/Geist-Variable.woff2");
-    add("Tape Geist Mono", "fonts/GeistMono-Variable.woff2");
-  } catch {}
+  // Fonts must be registered on the document to reach the shadow root. Only once a
+  // recording shows here, so the page is untouched otherwise.
+  let fontsAdded = false;
+  function addFonts() {
+    if (fontsAdded) return;
+    fontsAdded = true;
+    try {
+      const add = (family, file) => {
+        const f = new FontFace(family, `url(${ext(file)})`, { weight: "100 900" });
+        f.load().then(() => document.fonts.add(f)).catch(() => {});
+      };
+      add("Tape Geist", "fonts/Geist-Variable.woff2");
+      add("Tape Geist Mono", "fonts/GeistMono-Variable.woff2");
+    } catch {}
+  }
 
   function clock(ms) {
     const s = Math.max(0, Math.floor(ms / 1000));
@@ -44,6 +50,7 @@
 
   function mount() {
     if (root) return;
+    addFonts();
     const hostEl = document.createElement("tape-overlay");
     hostEl.style.cssText = "all: initial; position: fixed; inset: 0; z-index: 2147483647; pointer-events: none;";
     const shadow = hostEl.attachShadow({ mode: "closed" });
@@ -249,6 +256,9 @@
     render();
   });
   document.addEventListener("visibilitychange", render);
+  chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
+    if (msg?.type === "tape-ping" && current()) reply({ ok: true });
+  });
 
   Promise.all([
     chrome.storage.session.get("rec").catch(() => ({})),

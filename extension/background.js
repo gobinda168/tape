@@ -87,6 +87,9 @@ async function host(cmd, extra = {}) {
 
 async function injectOverlay(tabId) {
   if (!tabId) return;
+  // A live copy answers; an orphaned one (extension reloaded) or none at all doesn't.
+  const alive = await chrome.tabs.sendMessage(tabId, { type: "tape-ping" }).catch(() => null);
+  if (alive?.ok) return;
   try {
     await chrome.scripting.executeScript({ target: { tabId }, files: ["lib/icons.js", "content.js"] });
   } catch {
@@ -326,5 +329,18 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   }
 });
 
-// New pages in the captured tab (or any tab, for screen recordings) get the overlay
-// through the manifest content script; nothing to do here.
+// Tape puts nothing on a page unless it is recording there. The bar follows the
+// captured tab (this-tab recordings) or whichever tab is in front (screen recordings).
+const LIVE = ["countdown", "recording", "paused", "saving"];
+
+chrome.tabs.onActivated.addListener(async ({ tabId }) => {
+  const s = await getState();
+  if (LIVE.includes(s.status) && s.source !== "tab") injectOverlay(tabId);
+});
+
+chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
+  if (info.status !== "complete") return;
+  const s = await getState();
+  if (!LIVE.includes(s.status)) return;
+  if (s.source === "tab" ? tabId === s.captureTabId : tab.active) injectOverlay(tabId);
+});

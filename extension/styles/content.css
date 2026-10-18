@@ -39,6 +39,7 @@
 
 /* Camera bubble. */
 .bubble {
+  user-select: none; -webkit-user-select: none;
   position: fixed; width: var(--size, 184px); height: var(--size, 184px);
   pointer-events: auto; cursor: grab; touch-action: none;
 }

@@ -14,9 +14,6 @@
   "background": { "service_worker": "background.js", "type": "module" },
   "permissions": ["offscreen", "tabCapture", "storage", "unlimitedStorage", "downloads", "scripting", "tabs", "activeTab"],
   "host_permissions": ["<all_urls>"],
-  "content_scripts": [
-    { "matches": ["http://*/*", "https://*/*", "file://*/*"], "js": ["lib/icons.js", "content.js"], "run_at": "document_idle" }
-  ],
   "web_accessible_resources": [
     { "resources": ["camera.html", "camera.js", "styles/content.css", "fonts/*"], "matches": ["<all_urls>"] }
   ],

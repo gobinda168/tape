@@ -15,3 +15,10 @@ ratings); 209 one-to-three-star reviews from 2024-2026 read closely. Shares are 
 | 8 | Breaks host pages, too many permissions (~5%) | Shadow-root overlay, but runs everywhere | Stage 3 |
 
 Praise to keep: one click to a link, screen + camera bubble together, feels personal.
+
+## Status (2026-10-18)
+
+- Stage 1 done (f08ff95): mic watched during the take, bar warning, silent takes flagged.
+- Stage 2 done (f3d755b): chunks persisted, interrupted takes recovered.
+- Stage 3 done: no manifest content script; the overlay is injected only while recording, follows tabs, never duplicates (ping before inject).
+- Stage 4 (free trim) not started.
