@@ -67,6 +67,7 @@
         <span class="sep" aria-hidden="true"></span>
         <button type="button" class="ctl" data-cmd="toggle-cam" aria-label="Hide camera" data-tip="Hide camera">${I("video-camera")}</button>
       </div>
+      <div class="mic-warn" role="status" hidden>${I("microphone-slash")}<span><strong>No sound from your mic.</strong> Check its mute button.</span></div>
       <div class="confirm" role="alertdialog" aria-label="Delete this recording?" hidden>
         <p>Delete this recording?</p>
         <button type="button" class="danger" data-confirm="yes">Delete</button>
@@ -84,6 +85,7 @@
       pause: shadow.querySelector('[data-cmd="toggle-pause"]'),
       cam: shadow.querySelector('[data-cmd="toggle-cam"]'),
       confirm: shadow.querySelector(".confirm"),
+      micWarn: shadow.querySelector(".mic-warn"),
       shadow,
     };
 
@@ -146,6 +148,7 @@
       const top = Math.min(Math.max(8, r.top + e.clientY - start.y), innerHeight - r.height - 8);
       pos = { left, bottom: innerHeight - top - r.height };
       place(el, pos);
+      pinWarn();
     });
     const end = () => {
       if (!start) return;
@@ -155,6 +158,16 @@
     };
     el.addEventListener("pointerup", end);
     el.addEventListener("pointercancel", end);
+  }
+
+  // The mic note is pinned to the bar's edge: above it, or below when the bar is at the top.
+  function pinWarn() {
+    if (!els.micWarn || els.micWarn.hidden) return;
+    const r = els.bar.getBoundingClientRect();
+    const below = r.top < 72;
+    els.micWarn.style.left = r.left + "px";
+    els.micWarn.style.top = below ? r.bottom + 10 + "px" : "";
+    els.micWarn.style.bottom = below ? "" : innerHeight - r.top + 10 + "px";
   }
 
   function place(el, { left, bottom }) {
@@ -181,6 +194,8 @@
     els.bar.hidden = counting;
     els.bar.classList.toggle("paused", s.status === "paused");
     els.bar.classList.toggle("saving", s.status === "saving");
+    els.micWarn.hidden = !(s.micSilent && s.status === "recording");
+    pinWarn();
     els.pause.innerHTML = s.status === "paused" ? I("play") : I("pause");
     els.pause.setAttribute("aria-label", s.status === "paused" ? "Resume" : "Pause");
     els.pause.dataset.tip = s.status === "paused" ? "Resume" : "Pause";

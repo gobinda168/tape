@@ -30,3 +30,19 @@ export function silenceWatch({ floor = 1e-4, after = 1500 } = {}) {
     },
   };
 }
+
+/** For a running take: calls onChange(silent) when the mic goes silent or comes back, and
+ *  remembers in `heard` whether it ever carried sound (a whole take with none was muted). */
+export function takeWatch({ floor = 1e-4, after = 3000, onChange } = {}) {
+  const watch = silenceWatch({ floor, after });
+  let silent = false;
+  return {
+    heard: false,
+    feed(peak, now) {
+      if (peak > floor) this.heard = true;
+      const next = watch.feed(peak, now);
+      if (next !== silent) onChange?.((silent = next));
+      return silent;
+    },
+  };
+}

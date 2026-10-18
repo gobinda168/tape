@@ -127,6 +127,7 @@ async function renderLibrary(id, fresh) {
               <span>${bytes(rec.size)}</span>
               ${rec.width ? `<span>${rec.width}×${rec.height}</span>` : ""}
             </p>
+            ${rec.noSound ? `<p class="no-sound">${icon("microphone-slash")}<span>The mic was on but never picked up a sound. If you spoke, it was probably muted.</span></p>` : ""}
           </div>
         </article>
 
@@ -185,6 +186,7 @@ function sheetItem(r, active, developing = false) {
     disk === "saved" ? `<span class="tag tone-orange" title="Saved on this computer">${icon("hard-drives")}</span>` : "",
     server === "saved" ? `<span class="tag tone-blue" title="Has a share link">${icon("link")}</span>` : "",
     disk === "error" || server === "error" ? `<span class="tag tone-red" title="A save failed">${icon("warning")}</span>` : "",
+    r.noSound ? `<span class="tag tone-red" title="No sound: the mic was muted">${icon("microphone-slash")}</span>` : "",
   ].join("");
   return `
     <li>

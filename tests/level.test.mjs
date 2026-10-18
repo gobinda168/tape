@@ -42,3 +42,29 @@ test("sound clears the warning, and silence has to last again before it returns"
   assert.equal(w.feed(0, 3000), false);
   assert.equal(w.feed(0, 3600), true);
 });
+
+import { takeWatch } from "../extension/lib/level.js";
+
+test("a take reports only changes in mic silence, not every sample", () => {
+  const changes = [];
+  const w = takeWatch({ after: 3000, onChange: (silent) => changes.push(silent) });
+  w.feed(0.05, 0);
+  w.feed(0, 1000);
+  w.feed(0, 4000); // quiet for 3 s: now silent
+  w.feed(0, 5000);
+  w.feed(0.05, 5100); // sound again
+  w.feed(0.05, 6000);
+  assert.deepEqual(changes, [true, false]);
+});
+
+test("a take remembers whether the mic ever carried sound", () => {
+  const quiet = takeWatch({ after: 3000 });
+  for (let t = 0; t < 10000; t += 200) quiet.feed(0, t);
+  assert.equal(quiet.heard, false);
+
+  const spoke = takeWatch({ after: 3000 });
+  spoke.feed(0, 0);
+  spoke.feed(0.2, 200);
+  spoke.feed(0, 400);
+  assert.equal(spoke.heard, true);
+});

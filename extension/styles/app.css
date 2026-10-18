@@ -116,6 +116,8 @@ code { font: 13px/1 var(--mono); padding: 2px 5px; border-radius: 4px; backgroun
 .blank .photo { display: grid; place-items: center; background: #e9e9e7; }
 .blank-art { font-size: 56px; color: #c8c8c5; display: grid; }
 .empty-title { font: 600 22px/1.25 var(--font); letter-spacing: -0.015em; margin: 0; }
+.no-sound { margin: 10px 0 0; display: flex; align-items: flex-start; gap: 8px; color: var(--red-press); font-size: 13px; line-height: 1.4; }
+.no-sound .icon { flex: none; font-size: 16px; margin-top: 1px; }
 .blank .meta { display: block; font-size: 14px; color: var(--ink-2); }
 
 /* Where it lives */

@@ -33,15 +33,18 @@ export function createHost(name) {
     rec = new TapeRecorder({
       video,
       audio,
+      mic,
       playback,
       quality: opts.quality,
       onEnded: () => chrome.runtime.sendMessage({ type: "host-ended" }).catch(() => {}),
+      onMicSilent: (silent) => chrome.runtime.sendMessage({ type: "mic-silent", silent }).catch(() => {}),
     });
     return { ok: true, mic: !!mic };
   }
 
   async function stop({ startedAt, meta }) {
     if (!rec) return { ok: false, error: "Nothing was recording." };
+    const micHeard = rec.micHeard;
     const out = await rec.stop();
     rec = null;
     if (!out.blob.size) return { ok: false, error: "The recording came out empty." };
@@ -59,6 +62,7 @@ export function createHost(name) {
         height: out.height,
         mode: meta?.mode,
         source: meta?.source,
+        noSound: micHeard === false, // the mic was on and never carried a sound
         saves: {},
       },
       out.blob

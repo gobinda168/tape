@@ -274,6 +274,11 @@ const handlers = {
   },
   // The user pressed Chrome's own "Stop sharing", or the camera went away.
   "host-ended": () => stop(),
+  // The recorder heard nothing from the mic for a few seconds (or heard it again).
+  "mic-silent": async (m) => {
+    const s = await getState();
+    if (["recording", "paused"].includes(s.status) && !!s.micSilent !== m.silent) await patchState({ micSilent: m.silent });
+  },
 };
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {

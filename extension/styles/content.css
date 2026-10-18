@@ -1,7 +1,7 @@
 /* In-page overlay. Isolated in a shadow root; the page's styles never reach it. */
 :host, * { box-sizing: border-box; }
 
-.count, .bubble, .bar, .confirm {
+.count, .bubble, .bar, .confirm, .mic-warn {
   --red: #e5402f; --red-press: #c9321f; --yellow: #f2c230; --blue: #2f78c4;
   --body: #1d1e20; --body-raised: #27292c; --body-line: #34363a;
   --ink: #f1f1ef; --ink-2: #a9abaf;
@@ -129,6 +129,20 @@
 .bar button[data-key]::after { content: attr(data-tip) "\2002" attr(data-key); }
 .bar.tips-below button[data-tip]::after { bottom: auto; top: calc(100% + 12px); transform: translate(-50%, -4px); }
 .bar:not(.dragging) button:hover::after, .bar button:focus-visible::after { opacity: 1; transform: translate(-50%, 0); transition-delay: 280ms; }
+
+/* Mic went quiet mid-take: a red note pinned to the bar, so the take can still be saved. */
+.mic-warn {
+  position: fixed; display: flex; align-items: center; gap: 8px; max-width: min(440px, calc(100vw - 32px));
+  padding: 9px 14px 9px 12px; border-radius: 12px;
+  background: #3a1a16; color: #ffb3a8; font-size: 13px; line-height: 1.35;
+  box-shadow: inset 0 0 0 1px rgb(229 64 47 / 0.45), 0 12px 32px -10px rgb(0 0 0 / 0.55);
+  pointer-events: none;
+}
+.mic-warn strong { color: #fff; font-weight: 600; }
+.mic-warn .icon { flex: none; color: #ff8d7d; }
+@media (prefers-reduced-motion: no-preference) {
+  .mic-warn:not([hidden]) { animation: bar-in 420ms var(--ease) both; }
+}
 
 /* Cancel confirmation sits just above the bar. */
 .confirm {

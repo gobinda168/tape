@@ -4,6 +4,7 @@
 
 import "./fix-webm-duration.js";
 import { QUALITY } from "./settings.js";
+import { takeWatch } from "./level.js";
 
 const MIME_CANDIDATES = [
   "video/mp4;codecs=avc1.640028,mp4a.40.2",
@@ -80,7 +81,7 @@ export class TapeRecorder {
    * @param {MediaStream[]} o.audio streams whose audio tracks are mixed in
    * @param {boolean} o.playback    play the captured tab's audio back (tab capture mutes the tab)
    */
-  constructor({ video, audio = [], playback = false, quality = "1080", onEnded }) {
+  constructor({ video, audio = [], mic = null, playback = false, quality = "1080", onEnded, onMicSilent }) {
     this.streams = [video, ...audio].filter(Boolean);
     this.videoTrack = video.getVideoTracks()[0];
     this.quality = quality;
@@ -98,8 +99,16 @@ export class TapeRecorder {
         const src = this.ctx.createMediaStreamSource(s);
         src.connect(this.dest);
         if (playback && s === video) src.connect(this.ctx.destination);
+        // Listen to the mic on its own, so a muted mic shows up while recording, not after.
+        if (s === mic) {
+          this.micAnalyser = this.ctx.createAnalyser();
+          this.micAnalyser.fftSize = 1024;
+          src.connect(this.micAnalyser);
+        }
       }
     }
+    this.onMicSilent = onMicSilent;
+    this.heard = false;
 
     this.videoTrack.addEventListener("ended", () => {
       if (this.state === "recording" || this.state === "paused") onEnded?.();
@@ -125,6 +134,32 @@ export class TapeRecorder {
     this.rec.start(1000);
     this.segmentStart = performance.now();
     this.state = "recording";
+    this.#watchMic();
+  }
+
+  #watchMic() {
+    clearInterval(this.micTimer);
+    if (!this.micAnalyser) return;
+    const buf = new Float32Array(this.micAnalyser.fftSize);
+    // A fresh watch per segment: the quiet of a pause doesn't count against the mic.
+    const watch = takeWatch({ after: 3000, onChange: (silent) => this.onMicSilent?.(silent) });
+    this.micTimer = setInterval(() => {
+      this.micAnalyser.getFloatTimeDomainData(buf);
+      let peak = 0;
+      for (const v of buf) peak = Math.max(peak, Math.abs(v));
+      watch.feed(peak, performance.now());
+      if (watch.heard) this.heard = true;
+    }, 250);
+  }
+
+  #unwatchMic() {
+    clearInterval(this.micTimer);
+    this.onMicSilent?.(false);
+  }
+
+  /** null when there was no mic; false when the mic never carried a sound (it was muted). */
+  get micHeard() {
+    return this.micAnalyser ? this.heard : null;
   }
 
   pause() {
@@ -132,6 +167,7 @@ export class TapeRecorder {
     this.rec.pause();
     this.elapsedBefore += performance.now() - this.segmentStart;
     this.state = "paused";
+    this.#unwatchMic();
   }
 
   resume() {
@@ -139,6 +175,7 @@ export class TapeRecorder {
     this.rec.resume();
     this.segmentStart = performance.now();
     this.state = "recording";
+    this.#watchMic();
   }
 
   #finish() {
@@ -152,8 +189,10 @@ export class TapeRecorder {
   /** Throw away what was recorded so far; streams stay open for another take. */
   async discardTake() {
     if (this.state === "recording") this.elapsedBefore += performance.now() - this.segmentStart;
+    this.#unwatchMic();
     await this.#finish();
     this.chunks = [];
+    this.heard = false;
     this.state = "ready";
   }
 
@@ -171,6 +210,7 @@ export class TapeRecorder {
   }
 
   release() {
+    clearInterval(this.micTimer);
     for (const s of this.streams) s.getTracks().forEach((t) => t.stop());
     this.dest?.stream.getTracks().forEach((t) => t.stop());
     this.ctx?.close().catch(() => {});
