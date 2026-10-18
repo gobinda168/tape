@@ -3,8 +3,13 @@
 // guards against running twice. Everything lives in a closed shadow root.
 
 (() => {
-  if (window.top !== window || window.__tapeOverlay) return;
-  window.__tapeOverlay = true;
+  if (window.top !== window) return;
+  // The newest copy always takes over. A plain "already ran" flag would let a copy
+  // orphaned by an extension reload (its listeners dead) block the fresh one forever.
+  const me = {};
+  window.__tapeOverlay = me;
+  const current = () => window.__tapeOverlay === me;
+  document.querySelectorAll("tape-overlay").forEach((el) => el.remove());
 
   const ext = (p) => chrome.runtime.getURL(p);
   const I = (n) => `<span class="icon" aria-hidden="true">${globalThis.TapeIcons?.[n] || ""}</span>`;
@@ -162,6 +167,7 @@
   }
 
   function render() {
+    if (!current()) return unmount();
     const s = state;
     if (!belongsHere(s)) return unmount();
     mount();
