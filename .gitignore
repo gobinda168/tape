@@ -4,3 +4,4 @@ server/data/
 .impeccable/review/
 .impeccable/build/
 .chrome-profile/
+__pycache__/
