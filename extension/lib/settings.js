@@ -18,7 +18,7 @@ export const DEFAULTS = {
   // Transcription by a model on this computer (OpenAI-style /v1/audio/transcriptions).
   transcribe: { url: "", model: "", key: "", auto: false },
   // Title and summary by a local LLM (OpenAI-style /v1/chat/completions, e.g. Ollama).
-  llm: { url: "", model: "", key: "", auto: true },
+  llm: { provider: "", url: "", model: "", key: "", auto: true }, // provider: ollama | lmstudio | nvidia | custom
   skippedSetup: false,
 };
 

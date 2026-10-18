@@ -615,6 +615,15 @@ function drawThumb(rec, blob, done) {
 
 // ---------- settings ----------
 
+// Model providers for titles and summaries. All speak the OpenAI-style chat API.
+const PROVIDERS = {
+  ollama: { name: "Ollama", where: "On this computer", url: "http://127.0.0.1:11434/v1", model: "gemma3:12b", key: false },
+  lmstudio: { name: "LM Studio", where: "On this computer", url: "http://127.0.0.1:1234/v1", model: "", key: false },
+  nvidia: { name: "NVIDIA", where: "Cloud, for testing", url: "https://integrate.api.nvidia.com/v1", model: "google/gemma-3-12b-it", key: "nvapi-..." },
+  custom: { name: "Custom", where: "Any OpenAI-compatible server", url: "", model: "", key: "optional" },
+};
+const providerOf = (llm) => llm.provider || Object.keys(PROVIDERS).find((k) => PROVIDERS[k].url && PROVIDERS[k].url === llm.url) || (llm.url ? "custom" : "ollama");
+
 const hostOf = (u) => { try { return new URL(u).hostname; } catch { return ""; } };
 /** Empty counts as local: nothing is configured, nothing is sent. */
 const isLocalUrl = (u) => !u || /^(127\.\d+\.\d+\.\d+|localhost|\[::1\]|::1|[\w-]+\.local)$/i.test(hostOf(u));
@@ -752,21 +761,26 @@ async function renderSettings() {
         <p class="lede">A language model reads the transcript and writes a title, a summary, key points and chapters. Run one on your machine to keep everything here.</p>
         <form id="llmForm" class="stack" autocomplete="off">
           <div class="field">
-            <label for="llmUrl">Model server</label>
-            <input id="llmUrl" type="url" inputmode="url" placeholder="http://127.0.0.1:11434/v1" value="${esc(settings.llm.url)}">
-            <span class="hint">Any OpenAI-compatible server: Ollama (<code>http://127.0.0.1:11434/v1</code>), LM Studio (<code>http://127.0.0.1:1234/v1</code>), llama.cpp or MLX. For testing, NVIDIA's API (<code>https://integrate.api.nvidia.com/v1</code>) works with your API key.</span>
-            <p class="remote-note" id="llmRemote" ${isLocalUrl(settings.llm.url) ? "hidden" : ""}>${icon("warning")}<span>This server isn't on this computer: transcripts are sent to <strong id="llmHost">${esc(hostOf(settings.llm.url))}</strong> to be summarised.</span></p>
+            <span class="label">Provider</span>
+            <div class="providers" role="radiogroup" aria-label="Model provider">
+              ${Object.entries(PROVIDERS).map(([k, p]) => `<label class="provider"><input type="radio" name="llmProvider" value="${k}" ${providerOf(settings.llm) === k ? "checked" : ""}><span>${p.name}</span><span class="hint">${p.where}</span></label>`).join("")}
+            </div>
           </div>
-          <div class="field-pair">
-            <div class="field">
-              <label for="llmModel">Model</label>
-              <input id="llmModel" type="text" spellcheck="false" list="llmModels" placeholder="Save and test to list models" value="${esc(settings.llm.model)}">
-              <datalist id="llmModels"></datalist>
-            </div>
-            <div class="field">
-              <label for="llmKey">API key <span class="hint-inline">optional</span></label>
-              <input id="llmKey" type="password" spellcheck="false" value="${esc(settings.llm.key)}">
-            </div>
+          <div class="field" id="llmUrlField">
+            <label for="llmUrl">Model server</label>
+            <input id="llmUrl" type="url" inputmode="url" placeholder="http://127.0.0.1:8080/v1" value="${esc(settings.llm.url)}">
+            <span class="hint">Any OpenAI-compatible server (<code>/v1/chat/completions</code>): llama.cpp, MLX, vLLM.</span>
+          </div>
+          <p class="remote-note" id="llmRemote" ${isLocalUrl(settings.llm.url) ? "hidden" : ""}>${icon("warning")}<span>This server isn't on this computer: transcripts are sent to <strong id="llmHost">${esc(hostOf(settings.llm.url))}</strong> to be summarised.</span></p>
+          <div class="field" id="llmKeyField">
+            <label for="llmKey" id="llmKeyLabel">API key</label>
+            <input id="llmKey" type="password" spellcheck="false" value="${esc(settings.llm.key)}">
+            <span class="hint" id="llmKeyHint"></span>
+          </div>
+          <div class="field">
+            <label for="llmModel">Model</label>
+            <input id="llmModel" type="text" spellcheck="false" list="llmModels" placeholder="Save and test to list models" value="${esc(settings.llm.model)}">
+            <datalist id="llmModels"></datalist>
           </div>
           <div class="form-actions">
             <button type="submit" class="btn primary">Save and test</button>
@@ -844,19 +858,41 @@ async function renderSettings() {
   };
   wireDrive();
   $("#llmAuto").onchange = (e) => save({ llm: { ...settings.llm, auto: e.target.checked } });
+  // Picking a provider fills in its address and shows the key field only where one is needed.
+  const showProvider = (k, fill) => {
+    const p = PROVIDERS[k];
+    if (fill) {
+      $("#llmUrl").value = p.url;
+      $("#llmModel").value = p.model; // model names differ per provider
+      $("#llmResult").textContent = "";
+    }
+    $("#llmUrlField").hidden = k !== "custom";
+    $("#llmKeyField").hidden = !p.key;
+    $("#llmKeyLabel").textContent = k === "nvidia" ? "NVIDIA API key" : "API key (optional)";
+    $("#llmKey").placeholder = k === "nvidia" ? "nvapi-..." : "";
+    $("#llmKeyHint").innerHTML = k === "nvidia"
+      ? `Create one at <a class="link" href="https://build.nvidia.com/settings/api-keys" target="_blank" rel="noopener">build.nvidia.com</a>. It's stored only in this browser and sent only to NVIDIA.`
+      : "Only if your server asks for one.";
+    $("#llmModel").placeholder = p.model || "Save and test to list models";
+    $("#llmUrl").dispatchEvent(new Event("input"));
+  };
+  view.querySelectorAll('input[name="llmProvider"]').forEach((r) => r.addEventListener("change", () => showProvider(r.value, true)));
   $("#llmUrl").addEventListener("input", (e) => {
     const local = isLocalUrl(e.target.value.trim());
     $("#llmRemote").hidden = local;
     $("#llmHost").textContent = hostOf(e.target.value.trim());
     $("#llmWhere").textContent = local ? "On this computer" : "Remote server";
   });
+  showProvider(providerOf(settings.llm), false);
   $("#llmForm").onsubmit = async (e) => {
     e.preventDefault();
+    const provider = view.querySelector('input[name="llmProvider"]:checked')?.value || "custom";
     const url = $("#llmUrl").value.trim().replace(/\/+$/, "");
-    const key = $("#llmKey").value.trim();
+    const key = PROVIDERS[provider].key ? $("#llmKey").value.trim() : "";
     let model = $("#llmModel").value.trim();
     const out = $("#llmResult");
-    if (!url) { await save({ llm: { ...settings.llm, url: "", model } }); out.className = "result"; out.textContent = "Summaries turned off."; return; }
+    if (provider === "nvidia" && !key) { out.className = "result bad"; out.textContent = "Paste your NVIDIA API key first."; $("#llmKey").focus(); return; }
+    if (!url) { await save({ llm: { ...settings.llm, provider, url: "", model } }); out.className = "result"; out.textContent = "Summaries turned off."; return; }
     out.className = "result";
     out.textContent = "Testing";
     try {
@@ -865,7 +901,7 @@ async function renderSettings() {
       // A sensible default when none is picked; big catalogues (NVIDIA) list hundreds.
       const prefer = ["gemma3:12b", "qwen3:8b", "google/gemma-3-12b-it", "openai/gpt-oss-20b", "llama3.2:3b"];
       if (!model && models.length) { model = prefer.find((m) => models.includes(m)) || models[0]; $("#llmModel").value = model; }
-      await save({ llm: { ...settings.llm, url, key, model } });
+      await save({ llm: { ...settings.llm, provider, url, key, model } });
       if (!models.length) { out.className = "result bad"; out.textContent = "Connected, but the server has no models. Pull one first (for example: ollama pull qwen3:8b)."; return; }
       if (model && !models.includes(model)) { out.className = "result bad"; out.textContent = `Connected. "${model}" isn't on the server; it has ${models.slice(0, 3).join(", ")}.`; return; }
       out.textContent = `Asking ${model}`;
@@ -873,7 +909,7 @@ async function renderSettings() {
       out.className = "result ok";
       out.textContent = `Connected: using ${model}`;
     } catch (err) {
-      await save({ llm: { ...settings.llm, url, key, model } });
+      await save({ llm: { ...settings.llm, provider, url, key, model } });
       out.className = "result bad";
       out.textContent = err.message;
     }

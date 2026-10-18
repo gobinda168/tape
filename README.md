@@ -75,8 +75,11 @@ brew install ollama && brew services start ollama
 ollama pull qwen3:8b            # or any model you like
 ```
 
-In Tape: **Settings -> Titles and summaries**, model server `http://127.0.0.1:11434/v1`,
-**Save and test** (it lists the server's models). **Summarize after every transcript** is on
+In Tape: **Settings -> Titles and summaries**, pick **Ollama** (or LM Studio, or Custom for
+any other server), **Save and test** (it lists the server's models and sends a one-token
+request to check the model). For testing without a local model, pick **NVIDIA** and paste an
+API key from [build.nvidia.com](https://build.nvidia.com/settings/api-keys); Tape then says
+plainly that transcripts are sent to NVIDIA. **Summarize after every transcript** is on
 by default.
 
 ## Google Drive (optional)
