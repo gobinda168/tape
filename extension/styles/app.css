@@ -409,3 +409,21 @@ input:focus, select:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--t
   .field-pair { grid-template-columns: 1fr; }
   .tr-empty { flex-direction: column; align-items: flex-start; }
 }
+
+/* ---------- summary (local LLM) ---------- */
+.summary {
+  margin-top: 26px; padding: 18px 18px 14px; border-radius: var(--r-panel);
+  background: radial-gradient(120% 140% at 0% 0%, rgb(255 255 255 / 0.055), transparent 55%), var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line), var(--edge);
+}
+.sum-text { margin: 2px 0 0; font-size: 16px; line-height: 1.6; color: var(--text); max-width: 72ch; text-wrap: pretty; }
+.sum-points { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.sum-points li { position: relative; padding-left: 18px; color: var(--text-2); font-size: 14.5px; line-height: 1.5; }
+.sum-points li::before { content: ""; position: absolute; left: 3px; top: 0.62em; width: 5px; height: 5px; border-radius: 50%; background: var(--text-3); }
+.sum-sub { margin: 18px 0 6px; font-size: 13px; font-weight: 550; color: var(--text-3); }
+.sum-chapters { list-style: none; margin: 0 -8px; padding: 0; display: grid; gap: 1px; }
+.tr-skeleton.big i { height: 14px; }
+.tr-skeleton.big i:nth-child(4) { width: 66%; }
+@media (prefers-reduced-motion: no-preference) {
+  .summary.is-done { animation: rise 600ms var(--ease-out) both; }
+}

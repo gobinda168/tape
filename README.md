@@ -60,6 +60,25 @@ transcribe/install-macos.sh uninstall    # stop and remove
 In Tape: **Settings -> Transcription**, model server `http://127.0.0.1:8790`, **Save and
 test**. Turn on **Transcribe every new recording** to have it run after each save.
 
+## Titles and summaries with a local LLM (optional)
+
+Once a recording has a transcript, a language model **on your own computer** can write a
+title, a short summary, key points and chapters (click one to jump there). The model names
+the recording unless you already renamed it. Long recordings are read part by part, then
+merged, so small context windows are fine.
+
+Tape speaks the OpenAI-style `POST /v1/chat/completions`, so Ollama, LM Studio, llama.cpp's
+server and MLX servers all work. With [Ollama](https://ollama.com):
+
+```sh
+brew install ollama && brew services start ollama
+ollama pull qwen3:8b            # or any model you like
+```
+
+In Tape: **Settings -> Titles and summaries**, model server `http://127.0.0.1:11434/v1`,
+**Save and test** (it lists the server's models). **Summarize after every transcript** is on
+by default.
+
 ## Google Drive (optional)
 
 Tape can save each recording to a **Tape** folder in your own Google Drive and, if you turn

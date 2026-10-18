@@ -17,6 +17,8 @@ export const DEFAULTS = {
   drive: { clientId: "", email: "", name: "", autoUpload: false, anyoneWithLink: false },
   // Transcription by a model on this computer (OpenAI-style /v1/audio/transcriptions).
   transcribe: { url: "", model: "", key: "", auto: false },
+  // Title and summary by a local LLM (OpenAI-style /v1/chat/completions, e.g. Ollama).
+  llm: { url: "", model: "", key: "", auto: true },
   skippedSetup: false,
 };
 
@@ -28,6 +30,7 @@ export async function getSettings() {
     server: { ...DEFAULTS.server, ...(settings?.server || {}) },
     drive: { ...DEFAULTS.drive, ...(settings?.drive || {}) },
     transcribe: { ...DEFAULTS.transcribe, ...(settings?.transcribe || {}) },
+    llm: { ...DEFAULTS.llm, ...(settings?.llm || {}) },
   };
 }
 

@@ -4,6 +4,7 @@ import { saveToDisk, showInFolder, getFolder, chooseFolder, regrantFolder, downl
 import { clock, bytes, when, fileName, icon, esc } from "./lib/format.js";
 import { transcriberReady, transcribeRecording, testTranscriber } from "./lib/transcribe.js";
 import { transcriptText, stamp } from "./lib/transcript.js";
+import { llmReady, summarizeRecording, testLLM } from "./lib/summarize.js";
 import { connectDrive, disconnectDrive, driveReady, redirectUrl, uploadToDrive, renameOnDrive, trashOnDrive } from "./lib/drive.js";
 
 const $ = (sel, el = document) => el.querySelector(sel);
@@ -134,6 +135,8 @@ async function renderLibrary(id, fresh) {
           </div>
         </article>
 
+        <section class="summary" id="summary" aria-label="Summary"></section>
+
         <section class="lives" aria-label="Where this recording is saved" id="lives"></section>
 
         <div class="actions">
@@ -176,6 +179,7 @@ async function renderLibrary(id, fresh) {
     });
   }
   paintLives(rec);
+  paintSummary(rec);
   paintTranscript(rec);
   wireLibrary(rec, blob);
 
@@ -214,7 +218,7 @@ function paintTranscript(rec) {
   if (!el) return;
   const t = rec.transcript;
   const ready = transcriberReady(settings);
-  const head = (right = "") => `<header class="tr-head"><h2>${icon("sparkle")}Transcript</h2>${right}</header>`;
+  const head = (right = "") => `<header class="tr-head"><h2>${icon("subtitles")}${rec.transcript?.state === "done" ? "Complete transcript" : "Transcript"}</h2>${right}</header>`;
   if (t?.state === "working") {
     el.className = "transcript is-working";
     el.innerHTML = `${head(`<span class="tr-note">Listening on this computer</span>`)}
@@ -244,9 +248,75 @@ function paintTranscript(rec) {
 async function runTranscript(id, blob) {
   const cur = await getRecording(id);
   paintTranscript({ ...cur, transcript: { state: "working" } });
+  if (llmReady(settings)) paintSummary({ ...cur, summary: { state: "waiting" } });
   const out = await transcribeRecording(id, blob);
   if (currentId === id) paintTranscript(out);
+  if (out.transcript?.state === "done" && settings.llm.auto && llmReady(settings)) await runSummary(id);
+  else if (currentId === id) paintSummary(out);
 }
+
+// ---------- summary + title ----------
+
+function paintSummary(rec) {
+  const el = $("#summary");
+  if (!el) return;
+  const s = rec.summary;
+  const hasTranscript = rec.transcript?.state === "done";
+  const ready = llmReady(settings);
+  const head = (right = "") => `<header class="tr-head"><h2>${icon("sparkle")}Summary</h2>${right}</header>`;
+  el.hidden = false;
+  if (s?.state === "working" || s?.state === "waiting") {
+    el.className = "summary is-working";
+    const note = s.state === "waiting" ? "Waiting for the transcript" : s.parts ? `Reading part ${s.part} of ${s.parts}` : `Writing with ${esc(settings.llm.model)}`;
+    el.innerHTML = `${head(`<span class="tr-note">${note}</span>`)}
+      <div class="tr-skeleton big" aria-hidden="true"><i></i><i></i><i></i><i></i></div>`;
+    return;
+  }
+  if (s?.state === "done") {
+    el.className = "summary is-done";
+    el.innerHTML = `${head(`<span class="tr-model">${icon("plugs-connected")}${esc(s.model)}</span>
+        <button type="button" class="btn" data-sum="copy">${icon("copy")}Copy</button>
+        <button type="button" class="btn quiet" data-sum="run" title="Write it again">${icon("arrows-clockwise")}</button>`)}
+      ${s.summary ? `<p class="sum-text">${esc(s.summary)}</p>` : ""}
+      ${s.keyPoints?.length ? `<ul class="sum-points">${s.keyPoints.map((k) => `<li>${esc(k)}</li>`).join("")}</ul>` : ""}
+      ${s.chapters?.length ? `<h3 class="sum-sub">Chapters</h3><ol class="sum-chapters">${s.chapters.map((c) => `
+        <li><button type="button" class="tr-seg chapter" data-t="${c.start}"><span class="ts tnum">${stamp(c.start)}</span><span class="tx">${esc(c.title)}</span></button></li>`).join("")}</ol>` : ""}`;
+    return;
+  }
+  // Nothing to say yet: only show the panel when it can lead somewhere.
+  if (!ready && !hasTranscript) { el.hidden = true; return; }
+  el.className = "summary";
+  const error = s?.state === "error" ? `<p class="tr-error">${icon("warning")}<span>${esc(s.error)}</span></p>` : "";
+  const canRun = ready && (hasTranscript || transcriberReady(settings));
+  el.innerHTML = `${head()}
+    ${error}
+    <div class="tr-empty">
+      <p>${ready ? "A title, a short summary, key points and chapters, written by the language model on this computer from the complete transcript." : `Get a title, a summary and chapters from the transcript with a language model on this computer. <a class="link" href="#/settings">Connect a model</a>`}</p>
+      ${canRun ? `<button type="button" class="btn primary" data-sum="run">${icon("sparkle")}${s?.state === "error" ? "Try again" : hasTranscript ? "Summarize" : "Transcribe and summarize"}</button>` : ""}
+    </div>`;
+}
+
+async function runSummary(id) {
+  const before = await getRecording(id);
+  if (currentId === id) paintSummary({ ...before, summary: { state: "working" } });
+  const out = await summarizeRecording(id).catch((e) => ({ ...before, summary: { state: "error", error: e.message } }));
+  if (out.title !== before.title) {
+    // The model named it: follow everywhere the title shows.
+    if (currentId === id) { const t = $("#title"); if (t && document.activeElement !== t) t.value = out.title; }
+    const item = view.querySelector(`.print.small[href="#/r/${id}"] .t`);
+    if (item) item.textContent = out.title;
+    renameOnServer(out);
+    renameOnDrive(out);
+  }
+  if (currentId === id) paintSummary(out);
+}
+
+const summaryText = (r) => [
+  r.title,
+  r.summary.summary,
+  r.summary.keyPoints?.length ? r.summary.keyPoints.map((k) => `- ${k}`).join("\n") : "",
+  r.summary.chapters?.length ? "Chapters\n" + r.summary.chapters.map((c) => `${stamp(c.start)} ${c.title}`).join("\n") : "",
+].filter(Boolean).join("\n\n");
 
 function row({ tone, ico, name, detail, state, actions = "" }) {
   return `
@@ -350,7 +420,7 @@ function wireLibrary(rec, blob) {
     const v = title.value.trim() || rec.title;
     title.value = v;
     if (v === rec.title) return;
-    rec = await updateRecording(rec.id, { title: v });
+    rec = await updateRecording(rec.id, { title: v, titleEdited: true });
     renameOnServer(rec);
     renameOnDrive(rec);
     const t = view.querySelector(`.print.small.active .t`);
@@ -379,11 +449,28 @@ function wireLibrary(rec, blob) {
       navigator.clipboard.writeText(transcriptText(fresh.transcript)).then(() => toast("Transcript copied"), () => toast("Could not copy"));
     }
   });
+  $("#summary").addEventListener("click", async (e) => {
+    const ch = e.target.closest(".chapter");
+    if (ch) {
+      const v = video();
+      if (v) { v.currentTime = +ch.dataset.t; v.play().catch(() => {}); }
+      return;
+    }
+    const b = e.target.closest("button[data-sum]");
+    if (!b) return;
+    if (b.dataset.sum === "copy") {
+      const fresh = await getRecording(rec.id);
+      return navigator.clipboard.writeText(summaryText(fresh)).then(() => toast("Summary copied"), () => toast("Could not copy"));
+    }
+    const fresh = await getRecording(rec.id);
+    if (fresh.transcript?.state === "done") return runSummary(rec.id);
+    return runTranscript(rec.id, blob); // runs the summary after, when it's switched on
+  });
   // Follow along: the line being spoken lights up while the video plays.
   let lit = -1;
   const follow = () => {
     const v = video();
-    const segs = [...view.querySelectorAll(".tr-seg")];
+    const segs = [...view.querySelectorAll(".tr-list .tr-seg")];
     if (!v || !segs.length) return;
     let i = segs.findLastIndex((b) => +b.dataset.t <= v.currentTime + 0.05);
     if (i === lit) return;
@@ -657,6 +744,34 @@ async function renderSettings() {
       </section>
 
       <section class="group">
+        <h2>${icon("sparkle")}Titles and summaries <span class="opt-tag">On this computer</span></h2>
+        <p class="lede">A language model on your machine reads the transcript and writes a title, a summary, key points and chapters.</p>
+        <form id="llmForm" class="stack" autocomplete="off">
+          <div class="field">
+            <label for="llmUrl">Model server</label>
+            <input id="llmUrl" type="url" inputmode="url" placeholder="http://127.0.0.1:11434/v1" value="${esc(settings.llm.url)}">
+            <span class="hint">Any OpenAI-compatible server: Ollama (<code>http://127.0.0.1:11434/v1</code>), LM Studio (<code>http://127.0.0.1:1234/v1</code>), llama.cpp or MLX.</span>
+          </div>
+          <div class="field-pair">
+            <div class="field">
+              <label for="llmModel">Model</label>
+              <input id="llmModel" type="text" spellcheck="false" list="llmModels" placeholder="Save and test to list models" value="${esc(settings.llm.model)}">
+              <datalist id="llmModels"></datalist>
+            </div>
+            <div class="field">
+              <label for="llmKey">API key <span class="hint-inline">optional</span></label>
+              <input id="llmKey" type="password" spellcheck="false" value="${esc(settings.llm.key)}">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Save and test</button>
+            <span class="result" id="llmResult" role="status"></span>
+          </div>
+        </form>
+        ${sw("llmAuto", settings.llm.auto, "Summarize after every transcript", "Also names the recording, unless you renamed it yourself.")}
+      </section>
+
+      <section class="group">
         <h2>Recording</h2>
         ${sw("countdown", settings.countdown, "Count down from 3", "Gives you a moment before the recording starts.")}
         <div class="field-row">
@@ -723,6 +838,31 @@ async function renderSettings() {
     try { await chooseFolder(); await save({ saveTo: "folder" }); renderSettings(); toast("Folder saved"); } catch {}
   };
   wireDrive();
+  $("#llmAuto").onchange = (e) => save({ llm: { ...settings.llm, auto: e.target.checked } });
+  $("#llmForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const url = $("#llmUrl").value.trim().replace(/\/+$/, "");
+    const key = $("#llmKey").value.trim();
+    let model = $("#llmModel").value.trim();
+    const out = $("#llmResult");
+    if (!url) { await save({ llm: { ...settings.llm, url: "", model } }); out.className = "result"; out.textContent = "Summaries turned off."; return; }
+    out.className = "result";
+    out.textContent = "Testing";
+    try {
+      const models = await testLLM(url, key);
+      $("#llmModels").innerHTML = models.map((m) => `<option value="${esc(m)}">`).join("");
+      if (!model && models.length) { model = models[0]; $("#llmModel").value = model; }
+      await save({ llm: { ...settings.llm, url, key, model } });
+      if (!models.length) { out.className = "result bad"; out.textContent = "Connected, but the server has no models. Pull one first (for example: ollama pull qwen3:8b)."; return; }
+      if (model && !models.includes(model)) { out.className = "result bad"; out.textContent = `Connected. "${model}" isn't on the server; it has ${models.slice(0, 3).join(", ")}.`; return; }
+      out.className = "result ok";
+      out.textContent = `Connected: using ${model}`;
+    } catch (err) {
+      await save({ llm: { ...settings.llm, url, key, model } });
+      out.className = "result bad";
+      out.textContent = err.message;
+    }
+  };
   $("#trAuto").onchange = (e) => save({ transcribe: { ...settings.transcribe, auto: e.target.checked } });
   $("#trForm").onsubmit = async (e) => {
     e.preventDefault();
