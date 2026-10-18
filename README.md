@@ -49,6 +49,14 @@ word timestamps, about 15-40x real time on a Mac):
 uv run transcribe/tape_transcribe.py     # first run downloads the model; listens on 127.0.0.1:8790
 ```
 
+To keep it running in the background on a Mac (starts at login, restarts if it stops, logs
+to `~/Library/Logs/tape-transcribe.log`):
+
+```sh
+transcribe/install-macos.sh              # install and start
+transcribe/install-macos.sh uninstall    # stop and remove
+```
+
 In Tape: **Settings -> Transcription**, model server `http://127.0.0.1:8790`, **Save and
 test**. Turn on **Transcribe every new recording** to have it run after each save.
 
