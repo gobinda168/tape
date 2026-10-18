@@ -1,6 +1,6 @@
 import { getSettings, setSettings } from "./lib/settings.js";
 import { clock, icon } from "./lib/format.js";
-import { measure, silenceWatch } from "./lib/level.js";
+import { measure, silenceWatch, spectrumBars, ease } from "./lib/level.js";
 
 const $ = (id) => document.getElementById(id);
 const send = (type, extra) => chrome.runtime.sendMessage({ type, ...extra });
@@ -143,24 +143,24 @@ async function startMedia() {
       audioCtx = new AudioContext();
       const an = audioCtx.createAnalyser();
       an.fftSize = 1024;
+      an.smoothingTimeConstant = 0.55;
       audioCtx.createMediaStreamSource(s).connect(an);
-      const buf = new Float32Array(an.fftSize);
+      const wave = new Float32Array(an.fftSize);
+      const spectrum = new Float32Array(an.frequencyBinCount);
       const watch = silenceWatch({ after: 1500 });
-      const history = [];
+      let bars = [];
       let shown = "listening";
-      let last = 0;
       const loop = (now) => {
         meterRaf = requestAnimationFrame(loop);
-        if (now - last < 33) return; // about 30 bars a second
-        last = now;
-        an.getFloatTimeDomainData(buf);
-        const { peak, level } = measure(buf);
+        an.getFloatTimeDomainData(wave);
+        an.getFloatFrequencyData(spectrum);
+        const { peak, level } = measure(wave);
         const silent = watch.feed(peak, now);
-        history.push(level);
-        if (history.length > 120) history.shift();
+        const target = spectrumBars(spectrum, { bars: halfBars(), sampleRate: audioCtx.sampleRate, fftSize: an.fftSize });
+        bars = target.map((v, i) => ease(bars[i] ?? 0, silent ? 0 : v));
         const state = silent ? "silent" : level > 0.02 || shown === "live" ? "live" : "listening";
         if (state !== shown) paintMic((shown = state));
-        drawWave(history, state);
+        drawWave(bars, state, now);
       };
       meterRaf = requestAnimationFrame(loop);
     })
@@ -184,28 +184,42 @@ function paintMic(state) {
   $("meter").classList.toggle("silent", state === "silent");
 }
 
-// Scrolling bars, newest on the right. Body ink, per the design: the level is not a state colour.
-function drawWave(history, state) {
+// Voice bars mirrored from the centre: low voices in the middle, higher sounds toward the
+// edges. Ink white, per the design: the level is not a state colour. Red only when silent.
+const BAR = 3;
+const GAP = 4;
+const halfBars = () => Math.max(4, Math.ceil(Math.floor(($("wave").clientWidth || 280) / (BAR + GAP)) / 2));
+
+function drawWave(vals, state, now = performance.now()) {
   const c = $("wave");
   const dpr = devicePixelRatio || 1;
   const w = c.clientWidth;
   const h = c.clientHeight;
   if (!w) return;
-  if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
+  if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
   const g = c.getContext("2d");
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.clearRect(0, 0, w, h);
-  const step = 4;
-  const bars = Math.floor(w / step);
-  for (let i = 0; i < bars; i++) {
-    const v = history[history.length - bars + i] ?? 0;
-    const bh = Math.max(2, Math.round(v * h));
-    const age = (bars - 1 - i) / bars;
-    g.fillStyle = state === "silent" ? "rgb(229 64 47 / 0.55)"
-      : state === "off" ? "rgb(52 54 58)"
-      : `rgb(241 241 239 / ${(0.85 - age * 0.55).toFixed(2)})`;
+  const half = halfBars();
+  const step = BAR + GAP;
+  const cx = w / 2;
+  const live = state === "live" || state === "listening";
+  const ink = g.createLinearGradient(0, 0, 0, h);
+  ink.addColorStop(0, "rgb(243 244 246 / 0.55)");
+  ink.addColorStop(0.5, "rgb(255 255 255 / 1)");
+  ink.addColorStop(1, "rgb(243 244 246 / 0.55)");
+  g.fillStyle = state === "silent" ? "rgb(242 65 47 / 0.7)" : live ? ink : "rgb(255 255 255 / 0.14)";
+  g.shadowColor = live ? "rgb(255 255 255 / 0.35)" : "transparent";
+  g.shadowBlur = live ? 10 : 0;
+  for (let k = -(half - 1); k <= half - 1; k++) {
+    const d = Math.abs(k);
+    const taper = 1 - (d / half) ** 2 * 0.45;
+    let v = vals[d] ?? 0;
+    // A slow ripple keeps a quiet, working mic visibly alive.
+    if (live) v = Math.max(v, 0.07 + 0.05 * Math.sin(now / 320 - d * 0.55));
+    const bh = Math.max(BAR, v * taper * (h - 4));
     g.beginPath();
-    g.roundRect(i * step, (h - bh) / 2, 2, bh, 1);
+    g.roundRect(cx + k * step - BAR / 2, (h - bh) / 2, BAR, bh, BAR / 2);
     g.fill();
   }
 }

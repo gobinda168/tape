@@ -46,3 +46,23 @@ export function takeWatch({ floor = 1e-4, after = 3000, onChange } = {}) {
     },
   };
 }
+
+/** Frequency data (dB per bin) to `bars` values 0..1, log-spaced across the voice range,
+ *  each bar the loudest bin in its band. */
+export function spectrumBars(db, { bars, sampleRate, fftSize, minHz = 100, maxHz = 5000, minDb = -90, maxDb = -25 }) {
+  const hzPerBin = sampleRate / fftSize;
+  const out = [];
+  for (let b = 0; b < bars; b++) {
+    const f0 = minHz * (maxHz / minHz) ** (b / bars);
+    const f1 = minHz * (maxHz / minHz) ** ((b + 1) / bars);
+    const i0 = Math.max(0, Math.floor(f0 / hzPerBin));
+    const i1 = Math.min(db.length - 1, Math.max(i0, Math.ceil(f1 / hzPerBin) - 1));
+    let peak = -Infinity;
+    for (let i = i0; i <= i1; i++) if (db[i] > peak) peak = db[i];
+    out.push(Math.min(1, Math.max(0, (peak - minDb) / (maxDb - minDb))));
+  }
+  return out;
+}
+
+/** One animation step toward `next`: quick to rise, slow to fall. */
+export const ease = (prev, next) => prev + (next - prev) * (next > prev ? 0.55 : 0.15);

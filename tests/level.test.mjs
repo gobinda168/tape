@@ -68,3 +68,30 @@ test("a take remembers whether the mic ever carried sound", () => {
   spoke.feed(0, 400);
   assert.equal(spoke.heard, true);
 });
+
+import { spectrumBars, ease } from "../extension/lib/level.js";
+
+// A flat spectrum at `db` across all bins.
+const flat = (db, n = 512) => new Float32Array(n).fill(db);
+
+test("spectrum bars are 0 for silence and 1 at full level", () => {
+  const opts = { bars: 8, sampleRate: 48000, fftSize: 1024, minDb: -90, maxDb: -20 };
+  assert.deepEqual(spectrumBars(flat(-Infinity), opts), new Array(8).fill(0));
+  assert.deepEqual(spectrumBars(flat(-10), opts), new Array(8).fill(1));
+});
+
+test("spectrum bars follow the voice: a low tone lifts the first bars, not the last", () => {
+  const sampleRate = 48000, fftSize = 1024, hz = sampleRate / fftSize; // ~47 Hz per bin
+  const spec = flat(-100);
+  for (let i = Math.floor(150 / hz); i <= Math.ceil(250 / hz); i++) spec[i] = -25; // a hum around 200 Hz
+  const bars = spectrumBars(spec, { bars: 10, sampleRate, fftSize, minHz: 100, maxHz: 5000, minDb: -90, maxDb: -20 });
+  assert.ok(bars[0] > 0.8 || bars[1] > 0.8, `low bars ${bars.slice(0, 3)}`);
+  assert.equal(bars[9], 0);
+});
+
+test("ease rises quickly and falls slowly, so bars jump with speech and settle", () => {
+  const up = ease(0, 1);
+  const down = ease(1, 0);
+  assert.ok(up > 0.4, `up ${up}`);
+  assert.ok(down > 0.75, `down ${down}`);
+});
