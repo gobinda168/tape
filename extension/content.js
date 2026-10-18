@@ -60,12 +60,12 @@
       </div>
       <div class="bar" role="toolbar" aria-label="Tape recording controls">
         <span class="grip" aria-hidden="true">${I("dots-six-vertical")}</span>
-        <button type="button" class="stop" data-cmd="stop" aria-label="Stop and save">${I("stop-fill")}<span class="time tnum">0:00</span></button>
-        <button type="button" class="ctl" data-cmd="toggle-pause" aria-label="Pause">${I("pause")}</button>
-        <button type="button" class="ctl" data-cmd="restart" aria-label="Restart recording">${I("arrow-counter-clockwise")}</button>
-        <button type="button" class="ctl" data-cmd="cancel" aria-label="Cancel and delete">${I("trash")}</button>
+        <button type="button" class="stop" data-cmd="stop" aria-label="Stop and save" data-tip="Stop and save" data-key="⌥⇧R"><span class="rec-dot" aria-hidden="true"></span><span class="time tnum">0:00</span></button>
+        <button type="button" class="ctl" data-cmd="toggle-pause" aria-label="Pause" data-tip="Pause" data-key="⌥⇧P">${I("pause")}</button>
+        <button type="button" class="ctl" data-cmd="restart" aria-label="Restart recording" data-tip="Start over">${I("arrow-counter-clockwise")}</button>
+        <button type="button" class="ctl" data-cmd="cancel" aria-label="Cancel and delete" data-tip="Delete recording">${I("trash")}</button>
         <span class="sep" aria-hidden="true"></span>
-        <button type="button" class="ctl" data-cmd="toggle-cam" aria-label="Hide camera">${I("video-camera")}</button>
+        <button type="button" class="ctl" data-cmd="toggle-cam" aria-label="Hide camera" data-tip="Hide camera">${I("video-camera")}</button>
       </div>
       <div class="confirm" role="alertdialog" aria-label="Delete this recording?" hidden>
         <p>Delete this recording?</p>
@@ -111,6 +111,10 @@
       if (b) send("bubble-size", { size: b.dataset.size });
     });
 
+    // Tooltips sit above the bar unless it has been dragged to the top edge.
+    const aim = () => els.bar.classList.toggle("tips-below", els.bar.getBoundingClientRect().top < 56);
+    els.bar.addEventListener("pointerenter", aim);
+    els.bar.addEventListener("focusin", aim);
     draggable(els.bar, "bar", { left: 24, bottom: 24 });
     draggable(els.bubble, "bubble", { left: 24, bottom: 88 });
   }
@@ -179,12 +183,14 @@
     els.bar.classList.toggle("saving", s.status === "saving");
     els.pause.innerHTML = s.status === "paused" ? I("play") : I("pause");
     els.pause.setAttribute("aria-label", s.status === "paused" ? "Resume" : "Pause");
+    els.pause.dataset.tip = s.status === "paused" ? "Resume" : "Pause";
 
     const wantsCam = s.mode !== "screen";
     els.cam.hidden = !wantsCam || s.mode === "cam";
     els.shadow.querySelector(".sep").hidden = els.cam.hidden;
     els.cam.innerHTML = s.camOn ? I("video-camera") : I("video-camera-slash");
     els.cam.setAttribute("aria-label", s.camOn ? "Hide camera" : "Show camera");
+    els.cam.dataset.tip = s.camOn ? "Hide camera" : "Show camera";
 
     const showBubble = wantsCam && s.camOn && s.source !== "cam";
     const showBig = s.mode === "cam";

@@ -68,33 +68,67 @@
   position: fixed; display: flex; align-items: center; gap: 2px;
   height: 48px; padding: 0 6px 0 2px; border-radius: 999px;
   background: var(--body);
-  box-shadow: inset 0 0 0 1px var(--body-line), 0 12px 32px -10px rgb(0 0 0 / 0.55);
+  box-shadow: inset 0 0 0 1px var(--body-line), inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 1px 2px rgb(0 0 0 / 0.3), 0 16px 40px -12px rgb(0 0 0 / 0.6);
   pointer-events: auto; touch-action: none; user-select: none;
 }
+@media (prefers-reduced-motion: no-preference) {
+  .bar { animation: bar-in 520ms var(--ease) both; }
+}
+@keyframes bar-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.bar.dragging { box-shadow: inset 0 0 0 1px var(--body-line), 0 24px 56px -14px rgb(0 0 0 / 0.7); }
 .bar.dragging .grip { cursor: grabbing; }
-.grip { display: grid; place-items: center; width: 22px; height: 40px; color: var(--ink-2); cursor: grab; }
+.grip { display: grid; place-items: center; width: 22px; height: 40px; color: #6f7277; cursor: grab; transition: color 160ms var(--ease); }
+.bar:hover .grip { color: var(--ink-2); }
 .grip .icon { width: 16px; height: 16px; }
 .bar button {
-  all: unset; box-sizing: border-box; cursor: pointer; height: 36px; border-radius: 999px;
+  all: unset; box-sizing: border-box; cursor: pointer; height: 36px; border-radius: 999px; position: relative;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  transition: background 160ms var(--ease), transform 160ms var(--ease);
+  transition: background 160ms var(--ease), transform 160ms var(--ease), color 160ms var(--ease);
 }
 .bar button:active { transform: translateY(1px); }
 .bar button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.bar .stop { padding: 0 14px 0 10px; background: var(--red); color: #fff; font-size: 14px; font-weight: 500; }
+.bar .stop {
+  padding: 0 14px 0 12px; background: var(--red); color: #fff; font-size: 14px; font-weight: 500;
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.16);
+}
 .bar .stop:hover { background: var(--red-press); }
-.bar .stop .icon { width: 16px; height: 16px; }
-.time { min-width: 3.4ch; }
+/* The stop square inside a ring reads as "stop" and "recording" at once. */
+.rec-dot {
+  width: 14px; height: 14px; border-radius: 50%; display: grid; place-items: center;
+  box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.9);
+}
+.rec-dot::after { content: ""; width: 6px; height: 6px; border-radius: 1.5px; background: #fff; }
+.time { min-width: 3.4ch; letter-spacing: -0.01em; }
 .bar .ctl { width: 36px; color: var(--ink); }
 .bar .ctl:hover { background: var(--body-raised); }
 .sep { width: 1px; height: 20px; background: var(--body-line); margin: 0 4px; }
 
 .bar.paused .stop { background: var(--yellow); color: #17181a; }
+.bar.paused .rec-dot { box-shadow: inset 0 0 0 1.5px rgb(23 24 26 / 0.85); }
+.bar.paused .rec-dot::after { background: #17181a; }
 .bar.saving button { pointer-events: none; opacity: 0.6; }
 @media (prefers-reduced-motion: no-preference) {
-  .bar:not(.paused):not(.saving) .stop .icon { animation: rec 1.2s steps(2, jump-none) infinite; }
+  .bar:not(.paused):not(.saving) .rec-dot { animation: rec 1.2s steps(2, jump-none) infinite; }
+  .bar.paused .time { animation: rec 1.2s steps(2, jump-none) infinite; }
 }
 @keyframes rec { 50% { opacity: 0.45; } }
+
+/* Tooltips: the action, plus its shortcut where there is one. */
+.bar button[data-tip]::after {
+  content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 12px);
+  transform: translate(-50%, 4px); white-space: nowrap; pointer-events: none;
+  padding: 6px 9px; border-radius: 7px; background: #0f1011; color: var(--ink);
+  font: 500 12px/1 "Tape Geist", system-ui, sans-serif; letter-spacing: 0;
+  box-shadow: inset 0 0 0 1px var(--body-line), 0 8px 20px -8px rgb(0 0 0 / 0.6);
+  opacity: 0; transition: opacity 140ms var(--ease), transform 140ms var(--ease);
+}
+.bar button[data-key]::after { content: attr(data-tip) "\2002" attr(data-key); }
+.bar.tips-below button[data-tip]::after { bottom: auto; top: calc(100% + 12px); transform: translate(-50%, -4px); }
+.bar:not(.dragging) button:hover::after, .bar button:focus-visible::after { opacity: 1; transform: translate(-50%, 0); transition-delay: 280ms; }
 
 /* Cancel confirmation sits just above the bar. */
 .confirm {

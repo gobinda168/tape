@@ -1,0 +1,32 @@
+// Mic level for the popup's waveform, and muted-mic detection.
+// A hardware mute (a mic's own button) sends digital silence, while a live mic in a
+// quiet room still carries a little noise, so "silent" means near-zero samples.
+
+const FLOOR_DB = -60;
+const CEIL_DB = -6;
+
+/** RMS, peak and a 0..1 display level (-60 dBFS to -6 dBFS) of time-domain samples. */
+export function measure(samples) {
+  let sum = 0;
+  let peak = 0;
+  for (const s of samples) {
+    sum += s * s;
+    const a = Math.abs(s);
+    if (a > peak) peak = a;
+  }
+  const rms = samples.length ? Math.sqrt(sum / samples.length) : 0;
+  const db = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
+  const level = Math.min(1, Math.max(0, (db - FLOOR_DB) / (CEIL_DB - FLOOR_DB)));
+  return { rms, peak, level };
+}
+
+/** feed(peak, nowMs) is true once the peak has stayed at or under `floor` for `after` ms. */
+export function silenceWatch({ floor = 1e-4, after = 1500 } = {}) {
+  let lastSound = null;
+  return {
+    feed(peak, now) {
+      if (lastSound === null || peak > floor) lastSound = now;
+      return now - lastSound >= after;
+    },
+  };
+}

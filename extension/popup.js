@@ -1,5 +1,6 @@
 import { getSettings, setSettings } from "./lib/settings.js";
 import { clock, icon } from "./lib/format.js";
+import { measure, silenceWatch } from "./lib/level.js";
 
 const $ = (id) => document.getElementById(id);
 const send = (type, extra) => chrome.runtime.sendMessage({ type, ...extra });
@@ -16,6 +17,8 @@ let perms = { camera: "prompt", microphone: "prompt" };
 let previewStream = null;
 let micStream = null;
 let meterRaf = 0;
+let audioCtx = null;
+let mediaGen = 0; // bumps on every restart so a slow getUserMedia can't revive old media
 
 $("library").innerHTML = icon("film-strip");
 $("settings").innerHTML = icon("gear-six");
@@ -57,22 +60,35 @@ async function fillDevices() {
   const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
   const fill = (sel, kind, chosen, granted) => {
     const list = devices.filter((d) => d.kind === kind && d.deviceId);
-    // A popup can't show Chrome's permission prompt, so "not allowed" links to setup.
-    sel.hidden = !granted;
-    $(kind === "videoinput" ? "allowCamera" : "allowMic").hidden = granted;
     sel.innerHTML = "";
-    if (!granted || !list.length) {
-      sel.add(new Option(granted ? "None found" : "Not allowed yet", ""));
-      sel.disabled = true;
-      return;
-    }
-    sel.disabled = false;
-    for (const d of list) sel.add(new Option(d.label || (kind === "videoinput" ? "Camera" : "Microphone"), d.deviceId));
-    sel.value = list.some((d) => d.deviceId === chosen) ? chosen : list[0].deviceId;
+    for (const d of list) sel.add(new Option(cleanLabel(d.label) || (kind === "videoinput" ? "Camera" : "Microphone"), d.deviceId));
+    if (list.length) sel.value = list.some((d) => d.deviceId === chosen) ? chosen : list[0].deviceId;
+    return granted ? (list.length ? "ok" : "none") : "blocked";
   };
-  fill($("camera"), "videoinput", settings.cameraId, perms.camera === "granted");
-  fill($("mic"), "audioinput", settings.micId, perms.microphone === "granted");
+  devState.camera = fill($("camera"), "videoinput", settings.cameraId, perms.camera === "granted");
+  devState.mic = fill($("mic"), "audioinput", settings.micId, perms.microphone === "granted");
+
+  // Camera: the viewfinder says what is wrong when there is no picture.
+  const cam = devState.camera;
+  $("camera").parentElement.hidden = cam !== "ok";
+  $("camEmpty").hidden = cam === "ok";
+  $("allowCamera").hidden = cam !== "blocked";
+  $("camEmptyIcon").innerHTML = icon(cam === "blocked" ? "video-camera-slash" : "video-camera");
+  $("camEmptyText").innerHTML = cam === "blocked"
+    ? "<strong>Camera not allowed</strong>Tape uses it only while you record."
+    : "<strong>No camera found</strong>Plug one in, or bring your iPhone close, locked, to use it as a camera.";
+
+  // Microphone: a picker when allowed, a button when not.
+  const mic = devState.mic;
+  $("mic").parentElement.hidden = mic === "blocked";
+  $("allowMic").hidden = mic !== "blocked";
+  $("mic").disabled = !settings.micOn || mic !== "ok";
 }
+
+// "Yeti Stereo Microphone (046d:0ab7)": the USB id means nothing to people.
+const cleanLabel = (l) => l.replace(/\s*\([0-9a-f]{4}:[0-9a-f]{4}\)$/i, "");
+
+const devState = { camera: "none", mic: "none" };
 
 async function paintIdle() {
   radio("mode", settings.mode);
@@ -82,55 +98,131 @@ async function paintIdle() {
   $("micToggle").innerHTML = icon(settings.micOn ? "microphone" : "microphone-slash");
   $("micToggle").setAttribute("aria-pressed", String(settings.micOn));
   $("micToggle").setAttribute("aria-label", settings.micOn ? "Microphone on" : "Microphone off");
-  $("mic").disabled = !settings.micOn || perms.microphone !== "granted";
   await fillDevices();
-  if (!settings.micOn) $("mic").disabled = true;
-  const needsCam = settings.mode !== "screen" && perms.camera !== "granted";
-  $("start").disabled = false;
-  $("start").innerHTML = needsCam ? `${icon("video-camera")}Allow camera to record` : `${icon("record-fill")}Start recording`;
+  const wantsCam = settings.mode !== "screen";
+  const noCam = wantsCam && devState.camera === "none";
+  $("start").disabled = noCam;
+  $("start").innerHTML = noCam ? "No camera to record"
+    : wantsCam && devState.camera === "blocked" ? `${icon("video-camera")}Allow camera to record`
+    : `${icon("record-fill")}Start recording`;
   startMedia();
 }
 
 async function startMedia() {
   stopMedia();
-  if (settings.mode !== "screen" && perms.camera === "granted") {
+  const gen = ++mediaGen;
+  const vf = $("camRow");
+  vf.classList.remove("live");
+  if (settings.mode !== "screen" && devState.camera === "ok") {
     const id = $("camera").value;
     navigator.mediaDevices
-      .getUserMedia({ video: id ? { deviceId: { exact: id }, width: 320, height: 320 } : { width: 320, height: 320 } })
-      .then((s) => { previewStream = s; $("preview").srcObject = s; })
-      .catch(() => {});
-  }
-  if (settings.micOn && perms.microphone === "granted") {
-    const id = $("mic").value;
-    navigator.mediaDevices
-      .getUserMedia({ audio: id ? { deviceId: { exact: id } } : true })
+      .getUserMedia({ video: id ? { deviceId: { exact: id }, width: 640, height: 360 } : { width: 640, height: 360 } })
       .then((s) => {
-        micStream = s;
-        const ctx = new AudioContext();
-        const an = ctx.createAnalyser();
-        an.fftSize = 512;
-        ctx.createMediaStreamSource(s).connect(an);
-        const buf = new Uint8Array(an.fftSize);
-        const loop = () => {
-          an.getByteTimeDomainData(buf);
-          let peak = 0;
-          for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
-          $("micToggle").style.setProperty("--lvl", Math.min(1, peak / 48).toFixed(2));
-          meterRaf = requestAnimationFrame(loop);
-        };
-        loop();
+        if (gen !== mediaGen) return s.getTracks().forEach((t) => t.stop());
+        previewStream = s;
+        $("preview").srcObject = s;
+        $("preview").onloadeddata = () => vf.classList.add("live");
       })
       .catch(() => {});
-  } else {
-    $("micToggle").style.setProperty("--lvl", 0);
+  }
+
+  if (!settings.micOn || devState.mic !== "ok") {
+    paintMic(devState.mic === "blocked" ? "blocked" : devState.mic === "none" ? "none" : "off");
+    drawWave([], "off");
+    return;
+  }
+  paintMic("listening");
+  const id = $("mic").value;
+  // Raw input: noise suppression would hide the difference between a quiet room and a muted mic.
+  const raw = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+  navigator.mediaDevices
+    .getUserMedia({ audio: id ? { ...raw, deviceId: { exact: id } } : raw })
+    .then((s) => {
+      if (gen !== mediaGen) return s.getTracks().forEach((t) => t.stop());
+      micStream = s;
+      audioCtx = new AudioContext();
+      const an = audioCtx.createAnalyser();
+      an.fftSize = 1024;
+      audioCtx.createMediaStreamSource(s).connect(an);
+      const buf = new Float32Array(an.fftSize);
+      const watch = silenceWatch({ after: 1500 });
+      const history = [];
+      let shown = "listening";
+      let last = 0;
+      const loop = (now) => {
+        meterRaf = requestAnimationFrame(loop);
+        if (now - last < 33) return; // about 30 bars a second
+        last = now;
+        an.getFloatTimeDomainData(buf);
+        const { peak, level } = measure(buf);
+        const silent = watch.feed(peak, now);
+        history.push(level);
+        if (history.length > 120) history.shift();
+        const state = silent ? "silent" : level > 0.02 || shown === "live" ? "live" : "listening";
+        if (state !== shown) paintMic((shown = state));
+        drawWave(history, state);
+      };
+      meterRaf = requestAnimationFrame(loop);
+    })
+    .catch((e) => paintMic(e.name === "NotAllowedError" ? "blocked" : "failed"));
+}
+
+const MIC_STATUS = {
+  listening: ["microphone", "Listening"],
+  live: ["check", "Mic is working"],
+  off: ["microphone-slash", "Mic off"],
+  none: ["warning", "No microphone found"],
+  blocked: ["microphone-slash", "Mic not allowed"],
+  failed: ["warning", "Mic didn't start. Another app may be using it."],
+  silent: ["warning", "<strong>No sound from this mic.</strong> Check its mute button, or pick another mic."],
+};
+
+function paintMic(state) {
+  const [ic, text] = MIC_STATUS[state];
+  $("micStatus").innerHTML = `${icon(ic)}<span>${text}</span>`;
+  $("micStatus").className = "mic-status" + (state === "live" ? " ok" : "");
+  $("meter").classList.toggle("silent", state === "silent");
+}
+
+// Scrolling bars, newest on the right. Body ink, per the design: the level is not a state colour.
+function drawWave(history, state) {
+  const c = $("wave");
+  const dpr = devicePixelRatio || 1;
+  const w = c.clientWidth;
+  const h = c.clientHeight;
+  if (!w) return;
+  if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
+  const g = c.getContext("2d");
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  const step = 4;
+  const bars = Math.floor(w / step);
+  for (let i = 0; i < bars; i++) {
+    const v = history[history.length - bars + i] ?? 0;
+    const bh = Math.max(2, Math.round(v * h));
+    const age = (bars - 1 - i) / bars;
+    g.fillStyle = state === "silent" ? "rgb(229 64 47 / 0.55)"
+      : state === "off" ? "rgb(52 54 58)"
+      : `rgb(241 241 239 / ${(0.85 - age * 0.55).toFixed(2)})`;
+    g.beginPath();
+    g.roundRect(i * step, (h - bh) / 2, 2, bh, 1);
+    g.fill();
   }
 }
 
 function stopMedia() {
+  mediaGen++;
   cancelAnimationFrame(meterRaf);
   for (const s of [previewStream, micStream]) s?.getTracks().forEach((t) => t.stop());
   previewStream = micStream = null;
+  audioCtx?.close().catch(() => {});
+  audioCtx = null;
 }
+
+// A camera or mic plugged in (or an iPhone coming into range) shows up straight away.
+navigator.mediaDevices.addEventListener("devicechange", () => {
+  if (!$("idle").hidden) paintIdle();
+});
 
 for (const [group, key] of [["mode", "mode"], ["source", "source"]]) {
   $(group).addEventListener("click", async (e) => {
@@ -156,7 +248,7 @@ $("mic").onchange = async () => { settings = await setSettings({ micId: $("mic")
 $("micToggle").onclick = async () => { settings = await setSettings({ micOn: !settings.micOn }); paintIdle(); };
 
 $("start").onclick = async () => {
-  if (settings.mode !== "screen" && perms.camera !== "granted") return openApp("#/setup");
+  if (settings.mode !== "screen" && devState.camera === "blocked") return openApp("#/setup");
   $("error").hidden = true;
   $("start").disabled = true;
   $("start").innerHTML = "Starting";

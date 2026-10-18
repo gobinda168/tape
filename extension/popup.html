@@ -36,23 +36,35 @@
     <button type="button" role="radio" data-v="desktop"></button>
   </div>
 
-  <div class="device" id="camRow">
-    <div class="preview"><video id="preview" autoplay muted playsinline></video></div>
-    <label class="field">
-      <span>Camera</span>
-      <select id="camera"></select>
-      <button type="button" class="allow-device" id="allowCamera" hidden>Not allowed yet · Allow</button>
-    </label>
-  </div>
+  <section class="devices" aria-label="Camera and microphone">
+    <div class="viewfinder" id="camRow">
+      <video id="preview" autoplay muted playsinline></video>
+      <div class="vf-empty" id="camEmpty" hidden>
+        <span class="vf-icon" id="camEmptyIcon"></span>
+        <p id="camEmptyText"></p>
+        <button type="button" class="pill" id="allowCamera" hidden>Allow camera</button>
+      </div>
+      <label class="vf-pick">
+        <span class="sr">Camera</span>
+        <select id="camera"></select>
+      </label>
+    </div>
 
-  <div class="device" id="micRow">
-    <button type="button" class="micbtn" id="micToggle" aria-pressed="true"></button>
-    <label class="field">
-      <span>Microphone</span>
-      <select id="mic"></select>
-      <button type="button" class="allow-device" id="allowMic" hidden>Not allowed yet · Allow</button>
-    </label>
-  </div>
+    <div class="mic" id="micRow">
+      <div class="mic-head">
+        <button type="button" class="micbtn" id="micToggle" aria-pressed="true"></button>
+        <label class="mic-pick">
+          <span class="sr">Microphone</span>
+          <select id="mic"></select>
+        </label>
+        <button type="button" class="pill" id="allowMic" hidden>Allow mic</button>
+      </div>
+      <div class="meter" id="meter">
+        <canvas id="wave" aria-hidden="true"></canvas>
+        <p class="mic-status" id="micStatus" role="status"></p>
+      </div>
+    </div>
+  </section>
 
   <button type="button" class="start" id="start"></button>
   <p class="hint"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>R</kbd> starts and stops from any page</p>
