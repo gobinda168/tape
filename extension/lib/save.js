@@ -63,6 +63,28 @@ export async function saveToDisk(id, blob) {
   }
 }
 
+/** Removes the saved file from this computer (Downloads/Tape or the chosen folder). */
+export async function deleteFromDisk(save) {
+  if (save?.state !== "saved") return;
+  if (save.where === "downloads" && save.downloadId) {
+    try {
+      await chrome.downloads.removeFile(save.downloadId);
+    } catch {
+      // Already moved or deleted by hand; still drop it from Chrome's list.
+    }
+    await chrome.downloads.erase({ id: save.downloadId }).catch(() => {});
+    return;
+  }
+  if (save.where === "folder") {
+    const f = await getFolder();
+    if (!f || f.name !== save.folder) throw new Error(`Recording deleted. Delete ${save.fileName} from ${save.folder} yourself; Tape no longer has that folder.`);
+    if (f.permission !== "granted" && (await f.handle.requestPermission({ mode: "readwrite" })) !== "granted") {
+      throw new Error(`Recording deleted. Tape wasn't allowed into ${save.folder}, so the file is still there.`);
+    }
+    await f.handle.removeEntry(save.fileName).catch(() => {});
+  }
+}
+
 export function download(blob, filename) {
   const url = URL.createObjectURL(blob);
   return new Promise((resolve, reject) => {

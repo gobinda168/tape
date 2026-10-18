@@ -165,15 +165,27 @@ a.path { direction: ltr; color: var(--text-2); }
 }
 @keyframes working { from { opacity: 1; } to { opacity: 0.45; } }
 
-.actions { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* Title row: the name, then download and delete within reach. */
+.title-row { display: flex; align-items: center; gap: 8px; }
+.title-row .title { flex: 1; min-width: 0; }
+.title-actions { display: flex; gap: 2px; flex: none; }
+.iconbtn { border: 0; background: transparent; cursor: pointer; }
+.iconbtn.danger:hover { color: var(--red-ink); background: rgb(242 65 47 / 0.12); }
+
 .confirm {
-  flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-  margin-top: 6px; padding: 14px 16px; border-radius: var(--r-panel);
-  background: var(--surface); box-shadow: inset 0 0 0 1px var(--line), var(--edge);
+  margin-top: 14px; display: grid; gap: 12px; padding: 16px 18px; border-radius: var(--r-panel);
+  background: rgb(242 65 47 / 0.07); box-shadow: inset 0 0 0 1px rgb(242 65 47 / 0.32), var(--edge);
 }
-.confirm > span { font-weight: 550; margin-right: 4px; }
-.check { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-2); }
-.check input { accent-color: var(--red); width: 16px; height: 16px; }
+@media (prefers-reduced-motion: no-preference) {
+  .confirm:not([hidden]) { animation: rise 320ms var(--ease-out) both; }
+}
+.confirm > strong { font-size: 15px; font-weight: 600; }
+.confirm-opts { display: grid; gap: 8px; }
+.confirm-opts:empty { display: none; }
+.confirm-act { display: flex; gap: 8px; }
+.path.inline { display: inline; direction: ltr; margin-left: 4px; font-size: 12px; white-space: normal; word-break: break-all; }
+.check { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 6px; font-size: 14px; color: var(--text-2); cursor: pointer; }
+.check input { accent-color: var(--red); width: 16px; height: 16px; align-self: center; }
 .fine { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--text-3); }
 
 /* Recordings list */
@@ -449,3 +461,15 @@ input:focus, select:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--t
 .provider > span:first-of-type { font-size: 14px; font-weight: 550; }
 .provider .hint { margin: 0; font-size: 12px; }
 @media (max-width: 560px) { .providers { grid-template-columns: 1fr 1fr; } }
+
+/* Delete from the list: a trash button that shows on hover or keyboard focus. */
+.grid > li { position: relative; }
+.row-del {
+  position: absolute; top: 10px; right: 10px; z-index: 1; width: 30px; height: 30px; border-radius: 8px;
+  display: grid; place-items: center; font-size: 16px; color: var(--text-2); text-decoration: none;
+  background: rgb(17 19 23 / 0.85); box-shadow: inset 0 0 0 1px var(--line-strong);
+  opacity: 0; transition: opacity var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), background var(--t-fast) var(--ease-out);
+}
+.grid > li:hover .row-del, .row-del:focus-visible { opacity: 1; }
+.row-del:hover { color: var(--red-ink); background: rgb(58 26 22 / 0.95); }
+@media (hover: none) { .row-del { opacity: 1; } }

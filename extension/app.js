@@ -1,6 +1,6 @@
 import { recoverTakes, listRecordings, getRecording, getBlob, getThumb, putThumb, updateRecording, deleteRecording } from "./lib/db.js";
 import { getSettings, setSettings } from "./lib/settings.js";
-import { saveToDisk, showInFolder, getFolder, chooseFolder, regrantFolder, download, testServer, uploadToServer, renameOnServer, deleteOnServer } from "./lib/save.js";
+import { saveToDisk, deleteFromDisk, showInFolder, getFolder, chooseFolder, regrantFolder, download, testServer, uploadToServer, renameOnServer, deleteOnServer } from "./lib/save.js";
 import { clock, bytes, when, fileName, icon, esc } from "./lib/format.js";
 import { transcriberReady, transcribeRecording, testTranscriber, detectLocalTranscriber } from "./lib/transcribe.js";
 import { transcriptText, stamp } from "./lib/transcript.js";
@@ -79,7 +79,7 @@ async function route() {
   await findTranscriber();
   if (parts[0] === "settings") return renderSettings();
   if (parts[0] === "setup") return renderSetup();
-  return renderLibrary(parts[0] === "r" ? parts[1] : null, query.get("fresh") === "1");
+  return renderLibrary(parts[0] === "r" ? parts[1] : null, query.get("fresh") === "1", query.get("delete") === "1");
 }
 
 window.addEventListener("hashchange", route);
@@ -104,7 +104,7 @@ async function diskSave(id, blob) {
   try { return await saveToDisk(id, blob); } finally { savingNow.delete(id); }
 }
 
-async function renderLibrary(id, fresh) {
+async function renderLibrary(id, fresh, askDelete = false) {
   // Pick up any take that was cut off (crash, closed recorder) before listing.
   const { rec: live } = await chrome.storage.session.get("rec").catch(() => ({}));
   await recoverTakes(live && live.status !== "idle" ? live.takeId : undefined).catch(() => {});
@@ -135,14 +135,32 @@ async function renderLibrary(id, fresh) {
           <div class="glow" aria-hidden="true">${thumb ? `<img src="${objectUrl("t:" + rec.id, thumb)}" alt="">` : ""}</div>
           <div class="photo" id="player" tabindex="-1"></div>
           <div class="margin">
-            <label class="sr-only" for="title">Title</label>
-            <input class="title" id="title" value="${esc(rec.title)}" maxlength="120" spellcheck="false" autocomplete="off">
+            <div class="title-row">
+              <label class="sr-only" for="title">Title</label>
+              <input class="title" id="title" value="${esc(rec.title)}" maxlength="120" spellcheck="false" autocomplete="off">
+              <div class="title-actions">
+                <button type="button" class="iconbtn" id="dl" aria-label="Download a copy" title="Download a copy">${icon("download-simple")}</button>
+                <button type="button" class="iconbtn danger" id="del" aria-label="Delete recording" title="Delete recording">${icon("trash")}</button>
+              </div>
+            </div>
             <p class="meta tnum">
               <span>${esc(when(rec.createdAt))}</span>
               <span>${clock(rec.durationMs)}</span>
               <span>${bytes(rec.size)}</span>
               ${rec.width ? `<span>${rec.width}×${rec.height}</span>` : ""}
             </p>
+            <div class="confirm" id="confirm" role="alertdialog" aria-label="Delete this recording?" hidden>
+              <strong>Delete this recording?</strong>
+              <div class="confirm-opts">
+                ${rec.saves?.disk?.state === "saved" ? `<label class="check"><input type="checkbox" id="delDisk"> Also delete the file on this computer <span class="path inline">${esc(rec.saves.disk.where === "folder" ? `${rec.saves.disk.folder}/${rec.saves.disk.fileName}` : `Downloads/Tape/${rec.saves.disk.fileName}`)}</span></label>` : ""}
+                ${rec.saves?.drive?.state === "saved" ? `<label class="check"><input type="checkbox" id="delDrive"> Also move the Google Drive copy to the bin</label>` : ""}
+                ${rec.saves?.server?.state === "saved" ? `<label class="check"><input type="checkbox" id="delServer" checked> Also remove the share link</label>` : ""}
+              </div>
+              <div class="confirm-act">
+                <button type="button" class="btn danger" id="delYes">${icon("trash")}Delete</button>
+                <button type="button" class="btn quiet" id="delNo">Keep</button>
+              </div>
+            </div>
             ${rec.noSound ? `<p class="no-sound">${icon("microphone-slash")}<span>The mic was on but never picked up a sound. If you spoke, it was probably muted.</span></p>` : ""}
           </div>
         </article>
@@ -150,19 +168,6 @@ async function renderLibrary(id, fresh) {
         <section class="summary" id="summary" aria-label="Summary"></section>
 
         <section class="lives" aria-label="Where this recording is saved" id="lives"></section>
-
-        <div class="actions">
-          <button type="button" class="btn" id="dl">${icon("download-simple")}Download a copy</button>
-          <button type="button" class="btn quiet" id="del">${icon("trash")}Delete</button>
-          <div class="confirm" id="confirm" hidden>
-            <span>Delete from the Tape library?</span>
-            ${rec.saves?.server?.state === "saved" ? `<label class="check"><input type="checkbox" id="delServer" checked> Also remove the share link</label>` : ""}
-            ${rec.saves?.drive?.state === "saved" ? `<label class="check"><input type="checkbox" id="delDrive"> Also move the Drive copy to the bin</label>` : ""}
-            <button type="button" class="btn danger" id="delYes">Delete</button>
-            <button type="button" class="btn quiet" id="delNo">Keep</button>
-            <p class="fine">Files already saved on your computer stay where they are.</p>
-          </div>
-        </div>
 
         <section class="transcript" id="transcript" aria-label="Transcript"></section>
       </section>
@@ -193,7 +198,8 @@ async function renderLibrary(id, fresh) {
   paintLives(rec);
   paintSummary(rec);
   paintTranscript(rec);
-  wireLibrary(rec, blob);
+  wireLibrary(rec, blob, askDelete);
+  if (askDelete) history.replaceState(null, "", `#/r/${rec.id}`);
 
   if (!thumb && blob) makeThumb(rec, blob);
   if (fresh) {
@@ -213,6 +219,7 @@ function sheetItem(r, active, developing = false, i = 0) {
   ].join("");
   return `
     <li style="--i:${i}">
+      <a class="row-del" href="#/r/${r.id}?delete=1" aria-label="Delete ${esc(r.title)}" title="Delete">${icon("trash")}</a>
       <a class="print small${active ? " active" : ""}${developing ? " developing" : ""}" href="#/r/${r.id}" ${active ? 'aria-current="true"' : ""}>
         <span class="photo"><img data-thumb="${r.id}" alt="" hidden><span class="dur tnum">${clock(r.durationMs)}</span></span>
         <span class="margin">
@@ -430,7 +437,7 @@ async function paintLives(rec) {
   el.innerHTML = html;
 }
 
-function wireLibrary(rec, blob) {
+function wireLibrary(rec, blob, askDelete = false) {
   const title = $("#title");
   const commit = async () => {
     const v = title.value.trim() || rec.title;
@@ -522,16 +529,21 @@ function wireLibrary(rec, blob) {
   });
 
   $("#dl").onclick = () => download(blob, fileName(rec)).then(() => toast("Copy downloaded")).catch((e) => toast(e.message));
-  $("#del").onclick = () => { $("#confirm").hidden = false; $("#delYes").focus(); };
+  const openDelete = () => { $("#confirm").hidden = false; $("#confirm").scrollIntoView({ block: "nearest", behavior: "smooth" }); $("#delYes").focus(); };
+  $("#del").onclick = openDelete;
+  if (askDelete) openDelete();
   $("#delNo").onclick = () => ($("#confirm").hidden = true);
   $("#delYes").onclick = async () => {
     const fresh = await getRecording(rec.id);
-    if ($("#delServer")?.checked) await deleteOnServer(fresh);
-    if ($("#delDrive")?.checked) await trashOnDrive(fresh);
+    const also = { disk: !!$("#delDisk")?.checked, drive: !!$("#delDrive")?.checked, server: !!$("#delServer")?.checked };
+    const notes = [];
+    if (also.disk) await deleteFromDisk(fresh.saves.disk).catch((e) => notes.push(e.message));
+    if (also.drive) await trashOnDrive(fresh);
+    if (also.server) await deleteOnServer(fresh);
     await deleteRecording(rec.id);
     for (const k of ["v:" + rec.id, "t:" + rec.id]) { URL.revokeObjectURL(urls.get(k)); urls.delete(k); }
     location.hash = "#/";
-    toast("Recording deleted");
+    toast(notes[0] || (also.disk ? "Recording and file deleted" : "Recording deleted"));
   };
 }
 
