@@ -12,8 +12,9 @@ $("stop").innerHTML = `${icon("stop-fill")}Stop and save`;
 
 async function choose(auto = false) {
   $("error").hidden = true;
+  let displayStream = null;
   try {
-    const displayStream = await getDesktopStream(opts.quality);
+    displayStream = await getDesktopStream(opts.quality);
     await host.prepare({ opts, displayStream });
     live = true;
     $("pick").hidden = true;
@@ -21,7 +22,8 @@ async function choose(auto = false) {
     await chrome.runtime.sendMessage({ type: "host-ready" });
   } catch (e) {
     host.release();
-    if (auto) return; // Chrome wanted a click first; the button is waiting.
+    displayStream?.getTracks().forEach((t) => t.stop());
+    if (auto && !e.mic) return; // Chrome wanted a click first; the button is waiting.
     $("error").textContent = e.name === "NotAllowedError" ? "Nothing was shared. Choose a window or screen to start." : describe(e);
     $("error").hidden = false;
   }

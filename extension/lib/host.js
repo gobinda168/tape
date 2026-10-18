@@ -10,7 +10,12 @@ export function createHost(name) {
 
   async function prepare({ opts, streamId, displayStream }) {
     release();
-    const mic = opts.micOn ? await getMic(opts.micId).catch(() => null) : null;
+    // The mic is on, so a take without it would be silent: stop here and say why.
+    const mic = opts.micOn
+      ? await getMic(opts.micId).catch((e) => {
+          throw Object.assign(new Error(`${micProblem(e)} Allow it in Tape setup, or turn the microphone off to record without sound.`), { mic: true });
+        })
+      : null;
     let video;
     let audio = [];
     let playback = false;
@@ -88,6 +93,13 @@ export function createHost(name) {
   });
 
   return { prepare, release, get recorder() { return rec; } };
+}
+
+function micProblem(e) {
+  if (e.name === "NotAllowedError") return "Tape isn't allowed to use the microphone.";
+  if (e.name === "NotFoundError" || e.name === "OverconstrainedError") return "No microphone was found.";
+  if (e.name === "NotReadableError") return "Another app is using the microphone.";
+  return "The microphone didn't start.";
 }
 
 export function describe(e) {
