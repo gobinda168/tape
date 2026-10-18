@@ -34,6 +34,28 @@ The camera bubble is an extension iframe, so camera permission belongs to Tape, 
 
 Chrome does not allow capturing its own pages (`chrome://`, the Web Store). Record a window or the screen there instead.
 
+## Google Drive (optional)
+
+Tape can save each recording to a **Tape** folder in your own Google Drive and, if you turn
+it on, make the Drive link viewable by anyone who has it. Tape asks only for the
+`drive.file` permission, so it can see the files it created and nothing else in your Drive.
+
+Google needs an OAuth client that belongs to you (one time, about five minutes):
+
+1. Open [Google Cloud console](https://console.cloud.google.com/), create a project (any name).
+2. **APIs & Services → Library**: enable **Google Drive API**.
+3. **APIs & Services → OAuth consent screen**: choose **External**, fill in the app name and
+   your email, add the scope `.../auth/drive.file`, and add your Google account under
+   **Test users**.
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID**: type
+   **Web application**. Under **Authorized redirect URIs** paste the redirect URL that
+   Tape shows in **Settings → Google Drive** (it looks like
+   `https://<extension-id>.chromiumapp.org/`).
+5. Copy the client ID into **Settings → Google Drive**, **Save**, then **Connect Google Drive**.
+
+The redirect URL contains the extension's ID, which comes from the folder you loaded it
+from. If you move the `extension/` folder, add the new redirect URL to the same client.
+
 ## Share links (optional)
 
 ```sh
@@ -51,6 +73,6 @@ cd server && cargo test && cargo clippy --all-targets -- -D warnings
 
 The extension has no build. Reload it in `chrome://extensions` after edits.
 
-Not in v1: Google Drive saving, trimming, drawing on screen.
+Not in v1: trimming, drawing on screen.
 
 Fonts: Geist and Geist Mono (SIL OFL, `extension/fonts/OFL.txt`). Icons: Phosphor (MIT).

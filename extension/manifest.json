@@ -12,7 +12,7 @@
     "default_icon": { "16": "icons/16.png", "32": "icons/32.png" }
   },
   "background": { "service_worker": "background.js", "type": "module" },
-  "permissions": ["offscreen", "tabCapture", "storage", "unlimitedStorage", "downloads", "scripting", "tabs", "activeTab"],
+  "permissions": ["offscreen", "tabCapture", "storage", "unlimitedStorage", "downloads", "scripting", "tabs", "activeTab", "identity"],
   "host_permissions": ["<all_urls>"],
   "web_accessible_resources": [
     { "resources": ["camera.html", "camera.js", "styles/content.css", "fonts/*"], "matches": ["<all_urls>"] }

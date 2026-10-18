@@ -2,6 +2,7 @@ import { recoverTakes, listRecordings, getRecording, getBlob, getThumb, putThumb
 import { getSettings, setSettings } from "./lib/settings.js";
 import { saveToDisk, showInFolder, getFolder, chooseFolder, regrantFolder, download, testServer, uploadToServer, renameOnServer, deleteOnServer } from "./lib/save.js";
 import { clock, bytes, when, fileName, icon, esc } from "./lib/format.js";
+import { connectDrive, disconnectDrive, driveReady, redirectUrl, uploadToDrive, renameOnDrive, trashOnDrive } from "./lib/drive.js";
 
 const $ = (sel, el = document) => el.querySelector(sel);
 const view = $("#view");
@@ -139,6 +140,7 @@ async function renderLibrary(id, fresh) {
           <div class="confirm" id="confirm" hidden>
             <span>Delete from the Tape library?</span>
             ${rec.saves?.server?.state === "saved" ? `<label class="check"><input type="checkbox" id="delServer" checked> Also remove the share link</label>` : ""}
+            ${rec.saves?.drive?.state === "saved" ? `<label class="check"><input type="checkbox" id="delDrive"> Also move the Drive copy to the bin</label>` : ""}
             <button type="button" class="btn danger" id="delYes">Delete</button>
             <button type="button" class="btn quiet" id="delNo">Keep</button>
             <p class="fine">Files already saved on your computer stay where they are.</p>
@@ -245,6 +247,31 @@ async function paintLives(rec) {
     });
   }
 
+  const g = rec.saves?.drive;
+  if (g?.state === "saved") {
+    html += row({
+      tone: "blue", ico: "google-drive-logo", name: g.shared ? "Google Drive · anyone with the link" : "Google Drive · only you",
+      detail: `<a class="path link" href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.url.replace(/^https?:\/\//, "").replace(/\/view.*$/, ""))}</a>`, state: "saved",
+      actions: `<button type="button" class="btn" data-act="drive-open">${icon("arrow-square-out")}Open</button><button type="button" class="btn ${g.shared ? "primary" : ""}" data-act="drive-copy">${icon("copy")}Copy link</button>`,
+    });
+  } else if (g?.state === "saving") {
+    html += row({ tone: "yellow", ico: "google-drive-logo", name: "Google Drive", detail: `Uploading <span class="tnum" id="drivePct">${Math.round((g.progress || 0) * 100)}%</span>`, state: "saving" });
+  } else if (g?.state === "error") {
+    html += row({
+      tone: "red", ico: "warning", name: "Not saved to Google Drive", detail: `<span class="why">${esc(g.error)}</span>`, state: "error",
+      actions: `<button type="button" class="btn" data-act="drive-up">${icon("arrows-clockwise")}${/sign in/i.test(g.error) ? "Sign in and retry" : "Retry"}</button>`,
+    });
+  } else if (driveReady(settings)) {
+    html += row({
+      tone: "idle", ico: "google-drive-logo", name: "Google Drive", detail: `Save a copy to Drive/Tape in ${esc(settings.drive.email)}.`, state: "idle",
+      actions: `<button type="button" class="btn primary" data-act="drive-up">${icon("cloud-arrow-up")}Save to Drive</button>`,
+    });
+  } else {
+    html += row({
+      tone: "idle", ico: "google-drive-logo", name: "Google Drive", detail: `Keep a copy in your Drive and share it with a link. <a class="link" href="#/settings">Connect</a>`, state: "idle",
+    });
+  }
+
   const configured = settings.server.url && settings.server.token;
   if (s?.state === "saved") {
     html += row({
@@ -279,6 +306,7 @@ function wireLibrary(rec, blob) {
     if (v === rec.title) return;
     rec = await updateRecording(rec.id, { title: v });
     renameOnServer(rec);
+    renameOnDrive(rec);
     const t = view.querySelector(`.print.small.active .t`);
     if (t) t.textContent = v;
   };
@@ -301,6 +329,9 @@ function wireLibrary(rec, blob) {
         else toast("Tape still cannot write to that folder");
         break;
       case "upload": await makeThumb(rec, blob); await upload(rec.id, blob); break;
+      case "drive-up": await driveUpload(rec.id, blob, true); break;
+      case "drive-open": return chrome.tabs.create({ url: fresh.saves.drive.url });
+      case "drive-copy": return copy(fresh.saves.drive.url);
     }
     paintLives(await getRecording(rec.id));
   });
@@ -311,11 +342,25 @@ function wireLibrary(rec, blob) {
   $("#delYes").onclick = async () => {
     const fresh = await getRecording(rec.id);
     if ($("#delServer")?.checked) await deleteOnServer(fresh);
+    if ($("#delDrive")?.checked) await trashOnDrive(fresh);
     await deleteRecording(rec.id);
     for (const k of ["v:" + rec.id, "t:" + rec.id]) { URL.revokeObjectURL(urls.get(k)); urls.delete(k); }
     location.hash = "#/";
     toast("Recording deleted");
   };
+}
+
+async function driveUpload(id, blob, interactive = false) {
+  const t = setInterval(async () => currentId === id && paintLives(await getRecording(id)), 500);
+  const res = await uploadToDrive(id, blob, (p) => {
+    const pct = $("#drivePct");
+    if (pct) pct.textContent = Math.round(p * 100) + "%";
+  }, { interactive });
+  clearInterval(t);
+  if (currentId === id) paintLives(await getRecording(id));
+  const d = res?.saves?.drive;
+  if (d?.state === "saved") d.shared ? await copy(d.url) : toast("Saved to Google Drive");
+  return res;
 }
 
 async function upload(id, blob) {
@@ -342,6 +387,7 @@ async function develop(rec, blob) {
   }, wait);
 
   if (saved?.saves?.disk?.state === "saved") toast(`Saved to ${saved.saves.disk.where === "folder" ? saved.saves.disk.folder : "Downloads/Tape"}`);
+  if (settings.drive.autoUpload && driveReady(settings)) await driveUpload(rec.id, blob);
   if (settings.autoUpload && settings.server.url && settings.server.token) {
     await makeThumb(rec, blob); // the share page uses it as the poster
     const t = setInterval(async () => currentId === rec.id && paintLives(await getRecording(rec.id)), 400);
@@ -399,6 +445,70 @@ function drawThumb(rec, blob, done) {
 
 // ---------- settings ----------
 
+function driveGroup() {
+  const d = settings.drive;
+  const head = `<h2>${icon("google-drive-logo")}Google Drive <span class="opt-tag">Optional</span></h2>`;
+  if (!d.clientId) {
+    return `${head}
+      <p class="lede">Save recordings to a Tape folder in your own Drive and share them with a link. Tape can only see the files it creates there.</p>
+      <form id="driveSetup" class="stack" autocomplete="off">
+        <div class="field">
+          <label for="driveClient">OAuth client ID</label>
+          <input id="driveClient" type="text" spellcheck="false" placeholder="1234-abc.apps.googleusercontent.com">
+          <span class="hint">From a "Web application" OAuth client in Google Cloud. Add this redirect URL to it:</span>
+          <span class="copyline"><code class="tnum" id="redirect">${esc(redirectUrl())}</code><button type="button" class="btn quiet" id="copyRedirect">${icon("copy")}Copy</button></span>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn primary">Save</button><span class="result" id="driveResult" role="status"></span></div>
+      </form>`;
+  }
+  if (!d.email) {
+    return `${head}
+      <p class="lede">Save recordings to a Tape folder in your own Drive and share them with a link. Tape can only see the files it creates there.</p>
+      <div class="form-actions" style="padding-bottom:18px">
+        <button type="button" class="btn primary" id="driveConnect">${icon("google-drive-logo")}Connect Google Drive</button>
+        <button type="button" class="btn quiet" id="driveClientReset">Change client ID</button>
+        <span class="result" id="driveResult" role="status"></span>
+      </div>`;
+  }
+  return `${head}
+    <div class="account">
+      <span class="avatar" aria-hidden="true">${esc((d.name || d.email)[0].toUpperCase())}</span>
+      <span class="who"><strong>${esc(d.name || d.email)}</strong><span class="hint">${esc(d.email)} · saves to Drive/Tape</span></span>
+      <button type="button" class="btn quiet" id="driveDisconnect">${icon("sign-out")}Disconnect</button>
+    </div>
+    ${sw("driveAuto", d.autoUpload, "Save every new recording to Drive", "Uploads right after the recording is saved to this computer.")}
+    ${sw("driveAnyone", d.anyoneWithLink, "Anyone with the link can watch", "Off: only you can open the Drive link.")}`;
+}
+
+function wireDrive() {
+  const save = async (patch) => { settings = await setSettings({ drive: { ...settings.drive, ...patch } }); };
+  const again = () => { $("#driveGroup").innerHTML = driveGroup(); wireDrive(); };
+  const out = (text, cls = "") => { const r = $("#driveResult"); if (r) { r.className = "result " + cls; r.textContent = text; } };
+  $("#copyRedirect")?.addEventListener("click", () => navigator.clipboard.writeText(redirectUrl()).then(() => toast("Redirect URL copied")));
+  $("#driveSetup")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = $("#driveClient").value.trim();
+    if (!/\.apps\.googleusercontent\.com$/.test(id)) return out("That doesn't look like a Google OAuth client ID.", "bad");
+    await save({ clientId: id });
+    again();
+  });
+  $("#driveClientReset")?.addEventListener("click", async () => { await save({ clientId: "" }); again(); });
+  $("#driveConnect")?.addEventListener("click", async () => {
+    out("Waiting for Google");
+    try {
+      await connectDrive();
+      settings = await getSettings();
+      again();
+      toast("Google Drive connected");
+    } catch (e) {
+      out(e.message, "bad");
+    }
+  });
+  $("#driveDisconnect")?.addEventListener("click", async () => { await disconnectDrive(); settings = await getSettings(); again(); toast("Google Drive disconnected"); });
+  $("#driveAuto")?.addEventListener("change", (e) => save({ autoUpload: e.target.checked }));
+  $("#driveAnyone")?.addEventListener("change", (e) => save({ anyoneWithLink: e.target.checked }));
+}
+
 function sw(id, on, label, hint = "") {
   return `
     <label class="switch-row" for="${id}">
@@ -433,6 +543,8 @@ async function renderSettings() {
           </label>
         </div>
       </section>
+
+      <section class="group" id="driveGroup">${driveGroup()}</section>
 
       <section class="group">
         <h2>Recording</h2>
@@ -500,6 +612,7 @@ async function renderSettings() {
     e.preventDefault();
     try { await chooseFolder(); await save({ saveTo: "folder" }); renderSettings(); toast("Folder saved"); } catch {}
   };
+  wireDrive();
   $("#countdown").onchange = (e) => save({ countdown: e.target.checked });
   $("#autoUpload").onchange = (e) => save({ autoUpload: e.target.checked });
   $("#quality").onchange = (e) => save({ quality: e.target.value });

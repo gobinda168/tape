@@ -36,7 +36,7 @@ Loom keeps your videos on Loom's servers. Tape keeps them where you already keep
 - Modes: screen + camera, screen only, camera only. Sources: this tab, a window or the whole screen.
 - Countdown, pause/resume, restart, cancel, timer, camera bubble that can be dragged and resized.
 - v1 destinations: this computer (Downloads/Tape or a folder the user picks), plus an optional self-hosted tape-server for share links, view counts and timestamped comments.
-- Local first for v1: the user asked mid-build to save locally in the initial version. Google Drive is a later version; it needs the user's own Google Cloud OAuth client. *(user decision, 2026-10-16)*
+- Local first: every recording is saved on this computer. Google Drive (the user's own OAuth client, `drive.file` scope, a Tape folder, optional anyone-with-the-link sharing) added 2026-10-18 at the user's request.
 - No video editing beyond title in v1 (no trim). *(inferred, undecided)*
 
 ## Brand Commitments

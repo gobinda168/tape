@@ -13,12 +13,19 @@ export const DEFAULTS = {
   folderName: "",
   server: { url: "", token: "" },
   autoUpload: false,
+  // Google Drive: the user's own OAuth client; email is the connected account.
+  drive: { clientId: "", email: "", name: "", autoUpload: false, anyoneWithLink: false },
   skippedSetup: false,
 };
 
 export async function getSettings() {
   const { settings } = await chrome.storage.local.get("settings");
-  return { ...DEFAULTS, ...(settings || {}), server: { ...DEFAULTS.server, ...(settings?.server || {}) } };
+  return {
+    ...DEFAULTS,
+    ...(settings || {}),
+    server: { ...DEFAULTS.server, ...(settings?.server || {}) },
+    drive: { ...DEFAULTS.drive, ...(settings?.drive || {}) },
+  };
 }
 
 export async function setSettings(patch) {
