@@ -116,7 +116,7 @@ In Tape: **Settings → Share server**, enter `http://127.0.0.1:8787` and the ow
 ## Development
 
 ```sh
-node --test tests/                                                   # extension logic
+node --test tests/*.test.mjs                                         # extension logic
 cd server && cargo test && cargo clippy --all-targets -- -D warnings # share server
 ```
 
