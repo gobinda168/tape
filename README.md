@@ -116,11 +116,19 @@ In Tape: **Settings → Share server**, enter `http://127.0.0.1:8787` and the ow
 ## Development
 
 ```sh
-cd server && cargo test && cargo clippy --all-targets -- -D warnings
+node --test tests/                                                   # extension logic
+cd server && cargo test && cargo clippy --all-targets -- -D warnings # share server
 ```
 
 The extension has no build. Reload it in `chrome://extensions` after edits.
 
+Issues and pull requests are welcome. Keep the extension build-free (plain ES modules) and
+nothing leaving the user's computer unless they set it up.
+
 Not in v1: trimming, drawing on screen.
 
-Fonts: Geist and Geist Mono (SIL OFL, `extension/fonts/OFL.txt`). Icons: Phosphor (MIT).
+## License
+
+[MIT](LICENSE). Bundled third-party code keeps its own license: Geist and Geist Mono fonts
+(SIL OFL, `extension/fonts/OFL.txt`), Phosphor icons (MIT, `extension/lib/PHOSPHOR-LICENSE`),
+fix-webm-duration (MIT, `extension/lib/FIX-WEBM-DURATION-LICENSE`).
